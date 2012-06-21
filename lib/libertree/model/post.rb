@@ -292,6 +292,22 @@ module Libertree
         )
       end
 
+      def succ(n=1, river_id=nil)
+        if river_id
+          Post.s(
+            %{
+              SELECT p.* FROM posts p
+              INNER JOIN river_posts rp ON p.id=rp.post_id
+              WHERE rp.river_id = ? AND p.time_created > ?
+              LIMIT ?
+            },
+            river_id, self.time_created, n
+          )
+        else
+          Post.s( %{SELECT * FROM posts WHERE time_created > ? LIMIT ?}, self.time_created, n )
+        end
+      end
+
       def revise(text_new, visibility = self.visibility)
         PostRevision.create(
           'post_id' => self.id,
