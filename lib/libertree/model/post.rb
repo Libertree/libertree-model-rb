@@ -292,20 +292,33 @@ module Libertree
         )
       end
 
-      def succ(n=1, river_id=nil)
+      def neighbour(n=1, river_id=nil, order_by='time_created', comp='<')
+        time = self.time_created.strftime("%Y-%m-%d %H:%M:%S.%6N%z")
+
         if river_id
           Post.s(
             %{
               SELECT p.* FROM posts p
               INNER JOIN river_posts rp ON p.id=rp.post_id
-              WHERE rp.river_id = ? AND p.time_created > ?
+              WHERE rp.river_id = ? AND p.#{order_by} #{comp} ?
+              ORDER BY #{order_by} ASC
               LIMIT ?
             },
-            river_id, self.time_created, n
+            river_id, time, n
           )
         else
-          Post.s( %{SELECT * FROM posts WHERE time_created > ? LIMIT ?}, self.time_created, n )
+          Post.s( %{SELECT * FROM posts WHERE #{order_by} #{comp} ? ORDER BY #{order_by} ASC LIMIT ?}, time, n )
         end
+      end
+
+      # get subsequent posts from the same river
+      def succ(n=1, river_id=nil)
+        self.neighbour(n, river_id, 'time_created', '>')
+      end
+
+      # get preceding posts from the same river
+      def pred(n=1, river_id=nil)
+        self.neighbour(n, river_id)
       end
 
       def revise(text_new, visibility = self.visibility)
