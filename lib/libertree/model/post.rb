@@ -301,13 +301,13 @@ module Libertree
               SELECT p.* FROM posts p
               INNER JOIN river_posts rp ON p.id=rp.post_id
               WHERE rp.river_id = ? AND p.#{order_by} #{comp} ?
-              ORDER BY #{order_by} ASC
+              ORDER BY #{order_by} DESC
               LIMIT ?
             },
             river_id, time, n
           )
         else
-          Post.s( %{SELECT * FROM posts WHERE #{order_by} #{comp} ? ORDER BY #{order_by} ASC LIMIT ?}, time, n )
+          Post.s( %{SELECT * FROM posts WHERE #{order_by} #{comp} ? ORDER BY #{order_by} DESC LIMIT ?}, time, n )
         end
       end
 
