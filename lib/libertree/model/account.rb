@@ -355,6 +355,10 @@ module Libertree
         DB.dbh.sc  "SELECT account_has_contact_list_by_name_containing_member( ?, ?, ? )",
           self.id, contact_list_name, member.id
       end
+
+      def delete_cascade
+        DB.dbh.execute "SELECT delete_cascade_account(?)", self.id
+      end
     end
   end
 end
