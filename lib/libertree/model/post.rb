@@ -352,6 +352,10 @@ module Libertree
       def v_forest?
         self.visibility == 'forest' || self.visibility == 'internet'
       end
+
+      def dirty
+        @comments = nil
+      end
     end
   end
 end
