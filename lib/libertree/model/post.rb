@@ -132,7 +132,8 @@ module Libertree
       # @see Comment.on_post
       def comments(opt = nil)
         opt ||= {}  # We put this here instead of in the method signature because sometimes nil is literally sent
-        @comments ||= Comment.on_post(self, opt)
+        @comments ||= Hash.new
+        @comments[opt] ||= Comment.on_post(self, opt)
       end
 
       def commented_on_by?(member)
