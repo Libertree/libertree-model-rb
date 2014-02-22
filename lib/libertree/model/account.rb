@@ -3,7 +3,7 @@ require 'securerandom'
 
 module Libertree
   module Model
-    class Account < M4DBI::Model(:accounts)
+    class Account < Sequel::Model(:accounts)
 
       # These two password methods provide a seamless interface to the BCrypted
       # password.  The pseudo-field "password" can be treated like a normal
@@ -21,30 +21,25 @@ module Libertree
       # @return [Account] authenticated account, or nil on failure to authenticate
       def self.authenticate(creds)
         if creds['password_reset_code'].to_s
-          account = Account.one_where(
-            %{
-              password_reset_code = ?
-              AND NOW() <= password_reset_expiry
-            },
-            creds['password_reset_code'].to_s
-          )
+          account = Account.where(%{password_reset_code = ? AND NOW() <= password_reset_expiry},
+                                  creds['password_reset_code'].to_s).first
           if account
             return account
           end
         end
 
-        account = Account[ 'username' => creds['username'].to_s ]
+        account = Account[ username: creds['username'].to_s ]
         if account && account.password == creds['password'].to_s
           account
         end
       end
 
       def member
-        @member ||= Member['account_id' => self.id]
+        @member ||= Member[ account_id: self.id ]
       end
 
       def settings
-        @settings ||= AccountSettings['account_id' => self.id]
+        @settings ||= AccountSettings[ account_id: self.id ]
       end
 
       def notify_about(data)
@@ -55,42 +50,34 @@ module Libertree
       end
 
       def notifications( limit = 128 )
-        # TODO: prepared statement possible?
-        @notifications ||= Notification.s(
-          "SELECT * FROM notifications WHERE account_id = ? ORDER BY id DESC LIMIT #{limit.to_i}",
-          self.id
-        )
+        @notifications ||= Notification.where(account_id: self.id).reverse_order(:id).limit(limit.to_i).all
       end
 
       def notifications_unseen
         return @notifications_unseen  if @notifications_unseen
-
-        stm = Notification.prepare(
-          "SELECT * FROM notifications WHERE account_id = ? AND seen = FALSE ORDER BY id"
-        )
-        @notifications_unseen = stm.s(self.id).map { |row| Notification.new row }
-        stm.finish
-        @notifications_unseen
+        @notifications_unseen = Notification.where(account_id: self.id, seen: false).order(:id).all
       end
 
       def num_notifications_unseen
-        @num_notifications_unseen ||= Libertree::DB.dbh.sc("SELECT COUNT(*) FROM notifications WHERE account_id = ? AND seen = FALSE", self.id)
+        @num_notifications_unseen ||= Notification.where(account_id: self.id, seen: false).count
       end
 
       def num_chat_unseen
-        Libertree::DB.dbh.sc("SELECT COUNT(*) FROM chat_messages WHERE to_member_id = ? AND seen = FALSE", self.member.id)
+        ChatMessage.where(to_member_id: self.member.id, seen: false).count
       end
 
       def num_chat_unseen_from_partner(member)
-        Libertree::DB.dbh.sc("SELECT COUNT(*) FROM chat_messages WHERE from_member_id = ? AND to_member_id = ? AND seen = FALSE", member.id, self.member.id)
+        ChatMessage.where(from_member_id: member.id,
+                          to_member_id: self.member.id,
+                          seen: false).count
       end
 
       def chat_messages_unseen
-        Libertree::Model::ChatMessage.s("SELECT * FROM chat_messages WHERE to_member_id = ? AND seen = FALSE", self.member.id)
+        ChatMessage.where(to_member_id: self.member.id, seen: false).all
       end
 
       def chat_partners_current
-        stm = Libertree::Model::Member.prepare(
+        Member.s_wrap(
           %{
             (
               SELECT
@@ -132,22 +119,13 @@ module Libertree
                 AND cm.time_created > NOW() - '1 hour'::INTERVAL
                 AND m.id = cm.to_member_id
             )
-          }
-        )
-        partners = stm.s(
+          },
           self.member.id, self.member.id
-        ).map { |row|
-          Member.new row
-        }
-        stm.finish
-        partners
+        )
       end
 
       def rivers
-        stm = River.prepare("SELECT * FROM rivers WHERE account_id = ? ORDER BY position ASC, id DESC")
-        results = stm.s(self.id).map { |row| River.new row }
-        stm.finish
-        results
+        River.s("SELECT * FROM rivers WHERE account_id = ? ORDER BY position ASC, id DESC", self.id)
       end
 
       def rivers_not_appended
@@ -166,23 +144,15 @@ module Libertree
       end
 
       def home_river
-        stm = River.prepare("SELECT * FROM rivers WHERE account_id = ? AND home = TRUE")
-        row = stm.s1(self.id)
-        stm.finish
-        if row
-          River.new row
-        end
+        River.where(account_id: self.id, home: true).first
       end
 
       def home_river=(river)
-        DB.dbh.execute "SELECT account_set_home_river(?,?)", self.id, river.id
+        DB.dbh[ "SELECT account_set_home_river(?,?)", self.id, river.id ].get
       end
 
       def invitations_not_accepted
-        stm = Invitation.prepare("SELECT * FROM invitations WHERE inviter_account_id = ? AND account_id IS NULL ORDER BY id")
-        invitations = stm.s(self.id).map { |row| Invitation.new row }
-        stm.finish
-        invitations
+        Invitation.where("inviter_account_id = ? AND account_id IS NULL", self.id).order(:id).all
       end
 
       def new_invitation
@@ -193,13 +163,7 @@ module Libertree
 
       def generate_api_token
         self.api_token = SecureRandom.hex(16)
-      end
-
-      # RDBI casting not working with TIMESTAMP WITH TIME ZONE ?
-      def api_time_last
-        if self['api_time_last']
-          DateTime.parse self['api_time_last']
-        end
+        self.save
       end
 
       # @param [Time] time The time to compare to
@@ -224,15 +188,15 @@ module Libertree
       end
 
       def subscribe_to(post)
-        DB.dbh.execute(%{SELECT subscribe_account_to_post(?,?)}, self.id, post.id)
+        DB.dbh[ %{SELECT subscribe_account_to_post(?,?)}, self.id, post.id ].get
       end
 
       def unsubscribe_from(post)
-        DB.dbh.d  "DELETE FROM post_subscriptions WHERE account_id = ? AND post_id = ?", self.id, post.id
+        DB.dbh[ "DELETE FROM post_subscriptions WHERE account_id = ? AND post_id = ?", self.id, post.id ].get
       end
 
       def subscribed_to?(post)
-        DB.dbh.sc  "SELECT account_subscribed_to_post( ?, ? )", self.id, post.id
+        DB.dbh[ "SELECT account_subscribed_to_post( ?, ? )", self.id, post.id ].single_value
       end
 
       def messages( opts = {} )
@@ -244,7 +208,7 @@ module Libertree
         end
         time = Time.at( opts.fetch(:time, Time.now.to_f) ).strftime("%Y-%m-%d %H:%M:%S.%6N%z")
 
-        stm = Message.prepare(
+        Message.s_wrap(
           %{
             SELECT *
             FROM view__messages_sent_and_received
@@ -252,28 +216,22 @@ module Libertree
             AND time_created #{time_comparator} ?
             ORDER BY time_created DESC
             LIMIT #{limit}
-          }
+          },
+          self.member.id, time
         )
-        records = stm.s(self.member.id, time).map { |row| Message.new row }
-        stm.finish
-        records
       end
 
       # @return [Boolean] true iff password reset was successfully set up
       def self.set_up_password_reset_for(email)
-        stm = prepare("SELECT * FROM accounts WHERE email = ?")
-        result = stm.s1(email)
-        stm.finish
-        if result.nil?
+        account = self.where(email: email).first
+        if account.nil?
           return false
         end
 
-        account = self.new result
-        if account
-          account.password_reset_code = SecureRandom.hex(16)
-          account.password_reset_expiry = Time.now + 60 * 60
-          account
-        end
+        account.password_reset_code = SecureRandom.hex(16)
+        account.password_reset_expiry = Time.now + 60 * 60
+        account.save
+        account
       end
 
       def data_hash
@@ -300,17 +258,12 @@ module Libertree
         }
       end
 
-      # RDBI casting not working with TIMESTAMP WITH TIME ZONE ?
-      def time_heartbeat
-        DateTime.parse self['time_heartbeat']
-      end
-
       def online?
         Time.now - time_heartbeat.to_time < 5.01 * 60
       end
 
       def contact_lists
-        ContactList.where  account_id: self.id
+        ContactList.where(account_id: self.id).all
       end
 
       # All contacts, from all contact lists
@@ -326,13 +279,13 @@ module Libertree
       end
 
       def has_contact_list_by_name_containing_member?(contact_list_name, member)
-        DB.dbh.sc  "SELECT account_has_contact_list_by_name_containing_member( ?, ?, ? )",
-          self.id, contact_list_name, member.id
+        DB.dbh[ "SELECT account_has_contact_list_by_name_containing_member( ?, ?, ? )",
+                self.id, contact_list_name, member.id ].single_value
       end
 
       def delete_cascade
         handle = self.username
-        DB.dbh.execute "SELECT delete_cascade_account(?)", self.id
+        DB.dbh[ "SELECT delete_cascade_account(?)", self.id ].get
 
         # distribute deletion of member record
         Libertree::Model::Job.create_for_forests(
@@ -344,7 +297,7 @@ module Libertree
       end
 
       def remote_storage_connection
-        @remote_storage_connection ||= RemoteStorageConnection['account_id' => self.id]
+        @remote_storage_connection ||= RemoteStorageConnection[ account_id: self.id ]
       end
     end
   end

@@ -1,6 +1,6 @@
 module Libertree
   module Model
-    class ContactList < M4DBI::Model(:contact_lists)
+    class ContactList < Sequel::Model(:contact_lists)
       def account
         @account ||= Account[self.account_id]
       end
@@ -8,7 +8,7 @@ module Libertree
       def members
         return @members   if @members
 
-        stm = Member.prepare(
+        @members = Member.s(
           %{
             SELECT
               m.*
@@ -18,26 +18,24 @@ module Libertree
             WHERE
               clm.contact_list_id = ?
               AND m.id = clm.member_id
-          }
+          },
+          self.id
         )
-        @members = stm.s(self.id).map { |row| Member.new row }
-        stm.finish
-        @members
       end
 
       def members=(arg)
-        DB.dbh.d  "DELETE FROM contact_lists_members WHERE contact_list_id = ?", self.id
+        DB.dbh[ "DELETE FROM contact_lists_members WHERE contact_list_id = ?", self.id ].get
         Array(arg).each do |member_id_s|
-          DB.dbh.i  "INSERT INTO contact_lists_members ( contact_list_id, member_id ) VALUES ( ?, ? )", self.id, member_id_s.to_i
+          DB.dbh[ "INSERT INTO contact_lists_members ( contact_list_id, member_id ) VALUES ( ?, ? )", self.id, member_id_s.to_i ].get
         end
       end
 
       def delete_cascade
-        DB.dbh.execute "SELECT delete_cascade_contact_list(?)", self.id
+        DB.dbh[ "SELECT delete_cascade_contact_list(?)", self.id ].get
       end
 
       def <<(member)
-        DB.dbh.i(
+        DB.dbh[
           %{
             INSERT INTO contact_lists_members (
                 contact_list_id
@@ -57,7 +55,7 @@ module Libertree
           member.id,
           self.id,
           member.id
-        )
+        ].get
       end
     end
   end

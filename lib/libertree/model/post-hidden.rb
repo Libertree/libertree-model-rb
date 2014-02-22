@@ -1,17 +1,12 @@
 module Libertree
   module Model
-    class PostHidden < M4DBI::Model(:posts_hidden)
+    class PostHidden < Sequel::Model(:posts_hidden)
       def account
         @account ||= Account[self.account_id]
       end
 
       def post
         @post ||= Post[self.post_id]
-      end
-
-      # RDBI casting not working with TIMESTAMP WITH TIME ZONE ?
-      def time_created
-        DateTime.parse self['time_created']
       end
 
       def forests

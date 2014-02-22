@@ -1,12 +1,12 @@
 module Libertree
   module Model
-    class Server < M4DBI::Model(:servers)
+    class Server < Sequel::Model(:servers)
       def name_display
         self.name_given || self.domain || self.ip || "(unknown)"
       end
 
       def forests
-        stm = Forest.prepare(
+        Forest.s(
           %{
             SELECT
               f.*
@@ -16,11 +16,9 @@ module Libertree
             WHERE
               fs.server_id = ?
               AND f.id = fs.forest_id
-          }
+          },
+          self.id
         )
-        records = stm.s(self.id).map { |row| Forest.new row }
-        stm.finish
-        records
       end
     end
   end

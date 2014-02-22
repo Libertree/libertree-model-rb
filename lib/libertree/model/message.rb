@@ -1,11 +1,6 @@
 module Libertree
   module Model
-    class Message < M4DBI::Model(:messages)
-      # RDBI casting not working with TIMESTAMP WITH TIME ZONE ?
-      def time_created
-        DateTime.parse self['time_created']
-      end
-
+    class Message < Sequel::Model(:messages)
       def sender
         @sender ||= Member[self.sender_member_id]
       end
@@ -13,7 +8,7 @@ module Libertree
 
       def recipients
         return @recipients  if @recipients
-        stm = Member.prepare(
+        @recipients = Member.s(
           %{
             SELECT
               m.*
@@ -23,11 +18,9 @@ module Libertree
             WHERE
               mr.message_id = ?
               AND m.id = mr.member_id
-          }
+          },
+          self.id
         )
-        @recipients = stm.s(self.id).map { |row| Member.new row }
-        stm.finish
-        @recipients
       end
 
       def visible_to?(account)
@@ -52,7 +45,7 @@ module Libertree
 
         recipient_member_ids = Array(args[:recipient_member_ids])
         recipient_member_ids.each do |member_id|
-          DB.dbh.i  "INSERT INTO message_recipients ( message_id, member_id ) VALUES ( ?, ? )", message.id, member_id.to_i
+          DB.dbh[ "INSERT INTO message_recipients ( message_id, member_id ) VALUES ( ?, ? )", message.id, member_id.to_i ].get
           m = Member[member_id]
           if m.account
             a = m.account

@@ -1,16 +1,17 @@
 module Libertree
   module Model
-    class Comment < M4DBI::Model(:comments)
+    class Comment < Sequel::Model(:comments)
       extend HasSearchableText
 
-      after_create do |comment|
-        if comment.local? && comment.post.distribute?
+      def after_create
+        super
+        if self.local? && self.post.distribute?
           Libertree::Model::Job.create_for_forests(
             {
               task: 'request:COMMENT',
-              params: { 'comment_id' => comment.id, }
+              params: { 'comment_id' => self.id, }
             },
-            *comment.forests
+            *self.forests
           )
         end
       end
@@ -19,28 +20,17 @@ module Libertree
         ! remote_id
       end
 
+      # TODO: DB: association
       def member
-        if $m4dbi_cache_id
-          @member = Member.cached_fetch($m4dbi_cache_id, self.member_id)
-        else
-          @member = Member[self.member_id]
-        end
+        @member = Member[self.member_id]
       end
 
+      # TODO: DB: association
       def post
-        if $m4dbi_cache_id
-          @post = Post.cached_fetch($m4dbi_cache_id, self.post_id)
-        else
-          @post = Post[self.post_id]
-        end
+        @post = Post[self.post_id]
       end
 
-      # RDBI casting not working with TIMESTAMP WITH TIME ZONE ?
-      def time_created
-        DateTime.parse self['time_created']
-      end
-
-      def before_delete
+      def before_destroy
         if self.post
           remaining_comments = self.post.comments - [self]
           self.post.time_commented = remaining_comments.map(&:time_created).max
@@ -55,17 +45,19 @@ module Libertree
             *self.forests
           )
         end
+        super
       end
 
+      # TODO: the correct method to call is "destroy"
       def delete
-        self.before_delete
+        self.before_destroy
         super
       end
 
       # NOTE: deletion is NOT distributed when force=true
       def delete_cascade(force=false)
-        self.before_delete  unless force
-        DB.dbh.execute "SELECT delete_cascade_comment(?)", self.id
+        self.before_destroy  unless force
+        DB.dbh[ "SELECT delete_cascade_comment(?)", self.id ].get
       end
 
       # TODO: DRY up with Post#glimpse
@@ -98,10 +90,7 @@ module Libertree
 
       def likes
         return @likes  if @likes
-        stm = CommentLike.prepare("SELECT * FROM comment_likes WHERE comment_id = ? ORDER BY id DESC")
-        @likes = stm.s(self.id).map { |row| CommentLike.new row }
-        stm.finish
-        @likes
+        @likes = CommentLike.s("SELECT * FROM comment_likes WHERE comment_id = ? ORDER BY id DESC", self.id)
       end
 
       def notify_about_like(like)
@@ -149,7 +138,7 @@ module Libertree
 
       # TODO: When more visibilities come, restrict this result set by visibility
       def self.comments_since_id(comment_id)
-        stm = self.prepare(
+        self.s(
           %{
             SELECT
               c.*
@@ -159,15 +148,9 @@ module Libertree
               c.id > ?
             ORDER BY
               c.id
-          }
-        )
-        comments = stm.s(
+          },
           comment_id
-        ).map { |row|
-          self.new row
-        }
-        stm.finish
-        comments
+        )
       end
 
       # @param [Hash] opt options for restricting the comment set returned
@@ -187,12 +170,7 @@ module Libertree
           limit_clause = "LIMIT #{opt[:limit].to_i}"
         end
 
-        stm = Comment.prepare("SELECT * FROM comments WHERE post_id = ? #{from_clause} #{to_clause} ORDER BY id DESC #{limit_clause}")
-        comments = stm.s( *params ).map { |row|
-          self.new row
-        }.sort_by { |c| c.id }
-        stm.finish
-        comments
+        Comment.s("SELECT * FROM comments WHERE post_id = ? #{from_clause} #{to_clause} ORDER BY id DESC #{limit_clause}", *params).sort_by(&:id)
       end
     end
   end

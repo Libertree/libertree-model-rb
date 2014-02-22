@@ -2,37 +2,20 @@ require 'json'
 
 module Libertree
   module Model
-    class Job < M4DBI::Model(:jobs)
+    class Job < Sequel::Model(:jobs)
       MAX_TRIES = 11
 
       def params
-        JSON.parse self['params']
+        if val = super
+          JSON.parse val
+        end
       end
 
       def retry!
         self.pid = self.time_started = self.time_finished = nil
         self.time_to_start = Time.now
         self.tries = 0
-      end
-
-      # RDBI casting not working with TIMESTAMP WITH TIME ZONE ?
-      def time_created
-        DateTime.parse self['time_created']
-      end
-      def time_started
-        if self['time_started']
-          DateTime.parse self['time_started']
-        end
-      end
-      def time_to_start
-        if self['time_to_start']
-          DateTime.parse self['time_to_start']
-        end
-      end
-      def time_finished
-        if self['time_finished']
-          DateTime.parse self['time_finished']
-        end
+        self.save
       end
 
       # First parameter can be a Forest Array.
@@ -61,19 +44,11 @@ module Libertree
       # @return [Job] nil if no job was reserved
       def self.reserve(tasks)
         placeholders = ( ['?'] * tasks.count ).join(', ')
-        job = self.s1("SELECT * FROM jobs WHERE task IN (#{placeholders}) AND pid IS NULL AND tries < #{MAX_TRIES} AND time_to_start <= NOW() ORDER BY time_to_start ASC LIMIT 1", *tasks)
+        job = self.where("task IN (#{placeholders}) AND pid IS NULL AND tries < #{MAX_TRIES} AND time_to_start <= NOW()", *tasks).order(:time_to_start).limit(1).first
         return nil  if job.nil?
 
-        self.update(
-          {
-            id: job.id,
-            pid: nil,
-          },
-          {
-            pid: Process.pid,
-            time_started: Time.now
-          }
-        )
+        self.where({ id: job.id, pid: nil }).
+          update({ pid: Process.pid, time_started: Time.now })
 
         job = Job[job.id]
         if job.pid == Process.pid
@@ -83,7 +58,7 @@ module Libertree
 
       def unreserve
         new_tries = self.tries+1
-        self.set(
+        self.update(
           time_started: nil,
           pid: nil,
           tries: new_tries,
@@ -107,9 +82,9 @@ module Libertree
 
       def self.unfinished(task=nil)
         if task
-          self.s("SELECT * FROM jobs WHERE task = ? AND time_finished IS NULL", task)
+          self.where("task = ? AND time_finished IS NULL", task).all
         else
-          self.s("SELECT * FROM jobs WHERE time_finished IS NULL")
+          self.where("time_finished IS NULL").all
         end
       end
     end

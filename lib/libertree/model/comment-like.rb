@@ -1,14 +1,15 @@
 module Libertree
   module Model
-    class CommentLike < M4DBI::Model(:comment_likes)
-      after_create do |like|
-        if like.local? && like.comment.post.distribute?
+    class CommentLike < Sequel::Model(:comment_likes)
+      def after_create
+        super
+        if self.local? && self.comment.post.distribute?
           Libertree::Model::Job.create_for_forests(
             {
               task: 'request:COMMENT-LIKE',
-              params: { 'comment_like_id' => like.id, }
+              params: { 'comment_like_id' => self.id, }
             },
-            *like.forests
+            *self.forests
           )
         end
       end
@@ -25,12 +26,7 @@ module Libertree
         @comment ||= Comment[self.comment_id]
       end
 
-      # RDBI casting not working with TIMESTAMP WITH TIME ZONE ?
-      def time_created
-        DateTime.parse self['time_created']
-      end
-
-      def before_delete
+      def before_destroy
         if self.local? && self.comment.post.distribute?
           Libertree::Model::Job.create_for_forests(
             {
@@ -40,16 +36,18 @@ module Libertree
             *self.forests
           )
         end
+        super
       end
 
+      # TODO: the correct method to call is "destroy"
       def delete
-        self.before_delete
+        self.before_destroy
         super
       end
 
       def delete_cascade
-        self.before_delete
-        DB.dbh.execute "SELECT delete_cascade_comment_like(?)", self.id
+        self.before_destroy
+        DB.dbh[ "SELECT delete_cascade_comment_like(?)", self.id ].get
       end
 
       def self.create(*args)

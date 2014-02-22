@@ -1,11 +1,6 @@
 module Libertree
   module Model
-    class ChatMessage < M4DBI::Model(:chat_messages)
-      # RDBI casting not working with TIMESTAMP WITH TIME ZONE ?
-      def time_created
-        DateTime.parse self['time_created']
-      end
-
+    class ChatMessage < Sequel::Model(:chat_messages)
       def sender
         @sender ||= Member[self.from_member_id]
       end
@@ -54,19 +49,8 @@ module Libertree
       def self.mark_seen_between(account, member_id)
         return  if account.nil?
 
-        DB.dbh.u(
-          %{
-            UPDATE
-              chat_messages
-            SET
-              seen = TRUE
-            WHERE
-              from_member_id = ?
-              AND to_member_id = ?
-          },
-          member_id.to_i,
-          account.member.id
-        )
+        self.where("from_member_id = ? AND to_member_id = ?", member_id.to_i, account.member.id).
+          update(seen: true)
       end
     end
   end

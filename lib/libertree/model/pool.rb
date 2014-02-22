@@ -1,6 +1,6 @@
 module Libertree
   module Model
-    class Pool < M4DBI::Model(:pools)
+    class Pool < Sequel::Model(:pools)
       include IsRemoteOrLocal
 
       def create_pool_post_job(post)
@@ -26,43 +26,46 @@ module Libertree
         )
       end
 
-      after_create do |pool|
-        if pool.local? && pool.sprung?
+      def after_create
+        super
+        if self.local? && self.sprung?
           Libertree::Model::Job.create_for_forests(
             {
               task: 'request:POOL',
-              params: { 'pool_id' => pool.id, }
+              params: { 'pool_id' => self.id, }
             },
-            *pool.forests
+            *self.forests
           )
         end
       end
 
-      after_update do |pool_before, pool|
-        if pool.local?
-          if ! pool.sprung?
-            pool.create_pool_delete_job
+      def after_update
+        super
+        if self.local?
+          if ! self.sprung?
+            self.create_pool_delete_job
           else
-            if ! pool_before['sprung']
+            if self.previous_changes.include?(:sprung)
               Libertree::Model::Job.create_for_forests(
                 {
                   task: 'request:POOL',
-                  params: { 'pool_id' => pool.id, }
+                  params: { 'pool_id' => self.id, }
                 },
-                *pool.forests
+                *self.forests
               )
-              pool.posts.last(16).each do |post|
-                pool.create_pool_post_job(post)
+              self.posts.last(16).each do |post|
+                self.create_pool_post_job(post)
               end
             end
           end
         end
       end
 
-      before_delete do |pool|
-        if pool.local? && pool.sprung?
-          pool.create_pool_delete_job
+      def before_destroy
+        if self.local? && self.sprung?
+          self.create_pool_delete_job
         end
+        super
       end
 
       def member
@@ -81,7 +84,7 @@ module Libertree
         end
         time = Time.at( opts.fetch(:time, Time.now.to_f) ).strftime("%Y-%m-%d %H:%M:%S.%6N%z")
 
-        stm = Post.prepare(
+        @posts[opts] = Post.s(
           %{
             SELECT
               p.*
@@ -95,21 +98,18 @@ module Libertree
             ORDER BY
               p.id DESC
             LIMIT #{limit}
-          }
+          },
+          self.id, time
         )
-        @posts[opts] = stm.s(self.id, time).map { |row| Post.new row }
-        stm.finish
-
-        @posts[opts]
       end
 
       def includes?(post)
-        DB.dbh.sc  "SELECT EXISTS( SELECT 1 FROM pools_posts WHERE post_id = ? AND pool_id = ? LIMIT 1 )", post.id, self.id
+        DB.dbh[ "SELECT EXISTS( SELECT 1 FROM pools_posts WHERE post_id = ? AND pool_id = ? LIMIT 1 )", post.id, self.id ].single_value
       end
 
       # NOTE: deletion is NOT distributed
       def delete_cascade
-        DB.dbh.execute "SELECT delete_cascade_pool(?)", self.id
+        DB.dbh[ "SELECT delete_cascade_pool(?)", self.id ].get
       end
 
       def dirty
@@ -134,10 +134,7 @@ module Libertree
       end
 
       def <<(post)
-        pool_post = PoolPost[
-          'pool_id' => self.id,
-          'post_id' => post.id
-        ]
+        pool_post = PoolPost[ pool_id: self.id, post_id: post.id ]
         if pool_post.nil?
           pool_post_created = true
           pool_post = PoolPost.create(
@@ -156,7 +153,7 @@ module Libertree
       end
 
       def remove_post(post)
-        DB.dbh.d  "DELETE FROM pools_posts WHERE pool_id = ? AND post_id = ?", self.id, post.id
+        DB.dbh[  "DELETE FROM pools_posts WHERE pool_id = ? AND post_id = ?", self.id, post.id ].get
         self.dirty
         if self.local? && self.sprung?
           Libertree::Model::Job.create_for_forests(
@@ -173,7 +170,7 @@ module Libertree
       end
 
       def sprung?
-        self['sprung']
+        self.sprung
       end
     end
   end

@@ -3,81 +3,68 @@ require_relative '../embedder'
 
 module Libertree
   module Model
-    class Post < M4DBI::Model(:posts)
+    class Post < Sequel::Model(:posts)
       include IsRemoteOrLocal
       extend HasSearchableText
 
-      after_create do |post|
-        if post.local? && post.distribute?
+      def after_create
+        super
+        if self.local? && self.distribute?
           Libertree::Model::Job.create_for_forests(
             {
               task: 'request:POST',
-              params: { 'post_id' => post.id, }
+              params: { 'post_id' => self.id, }
             },
-            *post.forests
+            *self.forests
           )
         end
-        Libertree::Embedder.autoembed(post.text)
-        post.notify_mentioned
+        Libertree::Embedder.autoembed(self.text)
+        self.notify_mentioned
       end
 
-      after_update do |post_before, post|
+      def after_update
+        super
         has_distributable_difference = (
-          post_before['text'] != post.text ||
-          post_before['visibility'] != post.visibility
+          self.previous_changes.include?(:text) ||
+          self.previous_changes.include?(:visibility)
         )
 
         # TODO: deny change of visibility to 'tree' visibility?
         #       or trigger deletion on remotes?
-        if post.local? && post.distribute? && has_distributable_difference
+        if self.local? && self.distribute? && has_distributable_difference
           Libertree::Model::Job.create_for_forests(
             {
               task: 'request:POST',
-              params: { 'post_id' => post.id, }
+              params: { 'post_id' => self.id, }
             },
-            *post.forests
+            *self.forests
           )
         end
-        Libertree::Embedder.autoembed(post.text)
+        Libertree::Embedder.autoembed(self.text)
       end
 
+      # TODO: DB: replace with association
       def member
-        if $m4dbi_cache_id
-          @member = Member.cached_fetch($m4dbi_cache_id, self.member_id)
-        else
-          @member = Member[self.member_id]
-        end
+        @member = Member[self.member_id]
       end
 
-      # RDBI casting not working with TIMESTAMP WITH TIME ZONE ?
-      def time_created
-        DateTime.parse self['time_created']
-      end
-      def time_commented
-        if self['time_commented']
-          DateTime.parse self['time_commented']
-        end
-      end
-      def time_updated
-        DateTime.parse self['time_updated']
-      end
       def time_updated_overall
         [time_commented, time_updated].compact.max
       end
 
       def read_by?(account)
-        DB.dbh.sc  "SELECT EXISTS( SELECT 1 FROM posts_read WHERE post_id = ? AND account_id = ? LIMIT 1 )", self.id, account.id
+        DB.dbh[ "SELECT EXISTS( SELECT 1 FROM posts_read WHERE post_id = ? AND account_id = ? LIMIT 1 )", self.id, account.id ].single_value
       end
 
       def mark_as_read_by(account)
-        DB.dbh.execute  "SELECT mark_post_as_read_by( ?, ? )", self.id, account.id
+        DB.dbh[ "SELECT mark_post_as_read_by( ?, ? )", self.id, account.id ].get
       end
 
       def mark_as_unread_by(account)
-        DB.dbh.execute  "DELETE FROM posts_read WHERE post_id = ? AND account_id = ?", self.id, account.id
+        DB.dbh[  "DELETE FROM posts_read WHERE post_id = ? AND account_id = ?", self.id, account.id ].get
         account.rivers.each do |river|
           if river.should_contain? self
-            DB.dbh.i "INSERT INTO river_posts ( river_id, post_id ) VALUES ( ?, ? )", river.id, self.id
+            DB.dbh[ "INSERT INTO river_posts ( river_id, post_id ) VALUES ( ?, ? )", river.id, self.id ].get
           end
         end
       end
@@ -87,19 +74,19 @@ module Libertree
         if except_accounts.any?
           ids = except_accounts.map { |a| a.id }
           placeholders = ( ['?'] * ids.count ).join(', ')
-          DB.dbh.execute  "DELETE FROM posts_read WHERE post_id = ? AND NOT account_id IN (#{placeholders})", self.id, *ids
+          DB.dbh[ "DELETE FROM posts_read WHERE post_id = ? AND NOT account_id IN (#{placeholders})", self.id, *ids ].get
         else
-          DB.dbh.execute  "DELETE FROM posts_read WHERE post_id = ?", self.id
+          DB.dbh[ "DELETE FROM posts_read WHERE post_id = ?", self.id ].get
         end
 
         Libertree::Model::Job.create(
-          'task' => 'post:add-to-rivers',
-          'params' => { 'post_id' => self.id, }.to_json
+          task: 'post:add-to-rivers',
+          params: { 'post_id' => self.id, }.to_json
         )
       end
 
       def self.mark_all_as_read_by(account)
-        DB.dbh.execute(%{SELECT mark_all_posts_as_read_by(?)}, account.id)
+        DB.dbh[ %{SELECT mark_all_posts_as_read_by(?)}, account.id ].get
       end
 
       # @param [Hash] opt options for restricting the comment set returned.  See Comment.to_post .
@@ -109,7 +96,7 @@ module Libertree
       end
 
       def commented_on_by?(member)
-        DB.dbh.sc(
+        DB.dbh[
           %{
             SELECT EXISTS(
               SELECT 1
@@ -121,15 +108,12 @@ module Libertree
           },
           self.id,
           member.id
-        )
+        ].single_value
       end
 
       def likes
         return @likes   if @likes
-        stm = PostLike.prepare("SELECT * FROM post_likes WHERE post_id = ? ORDER BY id DESC")
-        @likes = stm.s(self.id).map { |row| PostLike.new row }
-        stm.finish
-        @likes
+        @likes = PostLike.where(post_id: self.id).reverse_order(:id)
       end
 
       def notify_about_comment(comment)
@@ -176,8 +160,7 @@ module Libertree
         usernames = self.text.scan(pattern).flatten.uniq - [author_name]
         return []  if usernames.empty?
 
-        placeholders = ( ['?'] * usernames.count ).join(', ')
-        Libertree::Model::Account.s("SELECT * FROM accounts WHERE username IN (#{placeholders})", *usernames)
+        Libertree::Model::Account.where(username: usernames).all
       end
 
       def glimpse( length = 60 )
@@ -188,7 +171,7 @@ module Libertree
         end
       end
 
-      def before_delete
+      def before_destroy
         if self.local? && self.distribute?
           Libertree::Model::Job.create_for_forests(
             {
@@ -198,24 +181,26 @@ module Libertree
             *self.forests
           )
         end
+        super
       end
 
+      # TODO: the correct method to call is "destroy"
       def delete
-        self.before_delete
+        self.before_destroy
         super
       end
 
       # NOTE: deletion is NOT distributed when force=true
       def delete_cascade(force=false)
-        self.before_delete  unless force
-        DB.dbh.execute "SELECT delete_cascade_post(?)", self.id
+        self.before_destroy  unless force
+        DB.dbh[ "SELECT delete_cascade_post(?)", self.id ].get
       end
 
       def self.create(*args)
         post = super
         Libertree::Model::Job.create(
-          'task' => 'post:add-to-rivers',
-          'params' => { 'post_id' => post.id, }.to_json
+          task: 'post:add-to-rivers',
+          params: { 'post_id' => post.id, }.to_json
         )
         if post.member.account
           post.mark_as_read_by post.member.account
@@ -242,7 +227,6 @@ module Libertree
           query_params << account.id
         end
 
-        # TODO: can this be turned into a prepared statement?
         River.s(
           %{
             SELECT
@@ -283,23 +267,23 @@ module Libertree
 
       def revise(text_new, visibility = self.visibility)
         PostRevision.create(
-          'post_id' => self.id,
-          'text'    => self.text
+          post_id: self.id,
+          text:    self.text
         )
-        self.set(
-          'text'         => text_new,
-          'visibility'   => visibility,
-          'time_updated' => Time.now
+        self.update(
+          text:         text_new,
+          visibility:   visibility,
+          time_updated: Time.now
         )
         mark_as_unread_by_all
       end
 
       def hidden_by?(account)
-        DB.dbh.sc  "SELECT post_hidden_by_account(?, ?)", self.id, account.id
+        DB.dbh[ "SELECT post_hidden_by_account(?, ?)", self.id, account.id ].single_value
       end
 
       def collected_by?(account)
-        DB.dbh.sc  "SELECT account_collected_post(?, ?)", account.id, self.id
+        DB.dbh[ "SELECT account_collected_post(?, ?)", account.id, self.id ].single_value
       end
 
       def to_hash

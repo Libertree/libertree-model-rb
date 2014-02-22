@@ -1,6 +1,6 @@
 module Libertree
   module Model
-    class River < M4DBI::Model(:rivers)
+    class River < Sequel::Model(:rivers)
       def account
         @account ||= Account[self.account_id]
       end
@@ -10,14 +10,11 @@ module Libertree
       end
 
       def contains?( post )
-        stm = River.prepare("SELECT river_contains_post(?, ?)")
-        retval = stm.sc( self.id, post.id )
-        stm.finish
-        retval
+        Libertree::DB.dbh[ "SELECT river_contains_post(?, ?)", self.id, post.id ].single_value
       end
 
       def add_post( post )
-        Libertree::DB.dbh.i "INSERT INTO river_posts ( river_id, post_id ) VALUES ( ?, ? )", self.id, post.id
+        Libertree::DB.dbh[ "INSERT INTO river_posts ( river_id, post_id ) VALUES ( ?, ? )", self.id, post.id ].get
       end
 
       def posts( opts = {} )
@@ -128,8 +125,8 @@ module Libertree
       end
 
       def refresh_posts( n = 512 )
-        DB.dbh.d  "DELETE FROM river_posts WHERE river_id = ?", self.id
-        stm = Post.prepare(
+        DB.dbh[ "DELETE FROM river_posts WHERE river_id = ?", self.id ].get
+        posts = Post.s(
           %{
             SELECT
               p.*
@@ -139,15 +136,14 @@ module Libertree
               NOT river_contains_post( ?, p.id )
               AND NOT post_hidden_by_account( p.id, ? )
             ORDER BY id DESC LIMIT #{n.to_i}
-          }
+          },
+          self.id, account.id
         )
-        posts = stm.s(self.id, account.id).map { |row| Post.new row }
-        stm.finish
 
         matching = posts.find_all { |post| self.matches_post? post }
         if matching.any?
           placeholders = ( ['?'] * matching.count ).join(', ')
-          DB.dbh.i "INSERT INTO river_posts SELECT ?, id FROM posts WHERE id IN (#{placeholders})", self.id, *matching.map(&:id)
+          DB.dbh[ "INSERT INTO river_posts SELECT ?, id FROM posts WHERE id IN (#{placeholders})", self.id, *matching.map(&:id)].get
         end
       end
 
@@ -186,6 +182,7 @@ module Libertree
             }.to_json
           )
         end
+        self.save
       end
 
       def delete_cascade(force=false)
@@ -197,11 +194,11 @@ module Libertree
             }.to_json
           )
         end
-        DB.dbh.execute "SELECT delete_cascade_river(?)", self.id
+        DB.dbh["SELECT delete_cascade_river(?)", self.id].get
       end
 
       def self.num_appended_to_all
-        DB.dbh.sc "SELECT COUNT(*) FROM rivers WHERE appended_to_all"
+        self.where(:appended_to_all).count
       end
 
       def self.create(*args)
@@ -250,9 +247,9 @@ module Libertree
       end
 
       def mark_all_posts_as_read
-        DB.dbh.execute(%{SELECT mark_all_posts_in_river_as_read_by(?,?)},
-                       self.id,
-                       self.account.id)
+        DB.dbh[ %{SELECT mark_all_posts_in_river_as_read_by(?,?)},
+                self.id,
+                self.account.id ].get
       end
     end
   end
