@@ -78,13 +78,17 @@ module Libertree
       def self.create(*args)
         comment = super
         account = comment.member.account
-        comment.post.time_commented = comment.time_created
-        comment.post.mark_as_unread_by_all  except: [account]
+        post = comment.post
+
+        post.time_commented = comment.time_created
+        post.mark_as_unread_by_all  except: [account]
         if account
-          comment.post.mark_as_read_by account
+          post.mark_as_read_by account
           account.subscribe_to comment.post
         end
-        comment.post.notify_about_comment comment
+        post.notify_about_comment comment
+        post.save
+
         comment
       end
 
