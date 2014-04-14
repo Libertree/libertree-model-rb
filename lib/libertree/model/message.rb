@@ -106,8 +106,6 @@ module Libertree
           sender_member_id: args[:sender_member_id],
           text: args[:text]
         )
-        message.distribute
-
         sender_member = Model::Member[ args[:sender_member_id].to_i ]
 
         recipient_member_ids = Array(args[:recipient_member_ids])
@@ -132,7 +130,7 @@ module Libertree
             end
           end
         end
-
+        message.distribute
         message
       end
 

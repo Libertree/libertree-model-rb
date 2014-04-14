@@ -33,6 +33,27 @@ describe Libertree::Model::Message do
     end
   end
 
+  describe 'distribute' do
+    it 'creates a distribution job for each remote server' do
+      expect( Libertree::Model::Job ).to receive(:create) do |args|
+        expect( args[:task] ).to eq('request:MESSAGE')
+      end
+      message = Libertree::Model::Message.
+        create_with_recipients({ :sender_member_id => @member.id,
+                                 :recipient_member_ids => [@remote_member.id],
+                                 :text => 'Hello'
+                               })
+    end
+    it 'creates no distribution job for messages to local members' do
+      expect( Libertree::Model::Job ).not_to receive(:create)
+      message = Libertree::Model::Message.
+        create_with_recipients({ :sender_member_id => @member.id,
+                                 :recipient_member_ids => [@local_member.id],
+                                 :text => 'Hello'
+                               })
+    end
+  end
+
   before :each do
     Libertree::DB.dbh[ "TRUNCATE messages, message_recipients" ].get
     @message_sent = Libertree::Model::Message.
