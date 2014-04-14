@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 require 'spec_helper'
 
 describe Libertree::Model::River do
@@ -125,6 +126,15 @@ describe Libertree::Model::River do
     it 'only matches whole words' do
       try_one  'test', 'testing', false
       try_one  'test', 'It was tested.', false
+    end
+
+    it 'matches non-ASCII characters' do
+      try_one  '♲', '♲ Friendica reshare', true
+      try_one  '♲', 'This is a ♲ Friendica reshare', true
+      try_one  '♲', 'Friendica reshare', false
+      try_one  '-♲', '♲ Friendica reshare', false
+      try_one  '-♲', 'This is a ♲ Friendica reshare', false
+      try_one  '-♲', 'Friendica reshare', true
     end
 
     it 'avoids matching when a minus term matches' do
