@@ -12,6 +12,27 @@ describe Libertree::Model::Message do
     @remote_member = Libertree::Model::Member.create( FactoryGirl.attributes_for(:member, :server_id => remote.id, :username => 'remote'))
   end
 
+  describe 'create_with_recipients' do
+    it 'calls #distribute' do
+      expect_any_instance_of(Libertree::Model::Message).to receive(:distribute)
+      message = Libertree::Model::Message.
+        create_with_recipients({ :sender_member_id => @member.id,
+                                 :recipient_member_ids => [@local_member.id],
+                                 :text => 'Hello'
+                               })
+    end
+
+    it 'creates a new local message record' do
+      c = Libertree::Model::Message.count
+      message = Libertree::Model::Message.
+        create_with_recipients({ :sender_member_id => @member.id,
+                                 :recipient_member_ids => [@local_member.id],
+                                 :text => 'Hello'
+                               })
+      expect( Libertree::Model::Message.count ).to be(c + 1)
+    end
+  end
+
   before :each do
     Libertree::DB.dbh[ "TRUNCATE messages, message_recipients" ].get
     @message_sent = Libertree::Model::Message.
