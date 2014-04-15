@@ -31,6 +31,15 @@ describe Libertree::Model::Message do
                                })
       expect( Libertree::Model::Message.count ).to be(c + 1)
     end
+
+    it 'creates records for local recipients' do
+      message = Libertree::Model::Message.
+        create_with_recipients({ :sender_member_id => @member.id,
+                                 :recipient_member_ids => [@local_member.id],
+                                 :text => 'Hello'
+                               })
+      expect( Libertree::DB.dbh["SELECT * FROM message_recipients WHERE message_id = ?", message.id].count ).not_to be 0
+    end
   end
 
   describe 'distribute' do
