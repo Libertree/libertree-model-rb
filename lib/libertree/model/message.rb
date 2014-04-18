@@ -104,6 +104,7 @@ module Libertree
       def self.create_with_recipients(args)
         message = self.create(
           sender_member_id: args[:sender_member_id],
+          remote_id: args[:remote_id],
           text: args[:text]
         )
         sender_member = Model::Member[ args[:sender_member_id].to_i ]
