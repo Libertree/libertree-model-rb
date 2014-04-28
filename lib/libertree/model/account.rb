@@ -25,7 +25,7 @@ module Libertree
       # Used by Ramaze::Helper::UserHelper.
       # @return [Account] authenticated account, or nil on failure to authenticate
       def self.authenticate(creds)
-        if @@auth_type == :ldap
+        if @@auth_type && @@auth_type == :ldap
           return  if creds['username'].nil? || creds['password'].nil?
           self.authenticate_ldap(creds['username'].to_s,
                                  creds['password'].to_s,
