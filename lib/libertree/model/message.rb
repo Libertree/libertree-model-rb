@@ -131,7 +131,7 @@ module Libertree
             end
           end
         end
-        message.distribute
+        message.distribute  if sender_member.local?
         message
       end
 
