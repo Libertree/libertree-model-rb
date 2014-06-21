@@ -29,6 +29,20 @@ module Libertree
         end
       end
 
+      # forward direct message to the given email address of the provided account
+      def forward_via_email(account)
+        return  unless account
+        return  unless self.visible_to?(account)
+
+        Libertree::Model::Job.create(
+          task: 'forward-via-email',
+          params: {
+            'username' => account.username,
+            'message_id' => self.id
+          }.to_json
+        )
+      end
+
       def recipients
         return @recipients  if @recipients
         @recipients = Member.s(
@@ -116,18 +130,8 @@ module Libertree
           if m.account
             a = m.account
             a.notify_about  'type' => 'message', 'message_id' => message.id
-
-            # forward via email for those local recipients who requested it
             if a.email && a.settings.forward_dms_via_email
-              Libertree::Model::Job.create(
-                task: 'email',
-                params: {
-                  'to'      => a.email,
-                  'pubkey'  => a.pubkey,
-                  'subject' => '[Libertree] Direct message', # TODO: translate
-                  'body'    => "#{sender_member.handle} wrote:\n\n#{args[:text]}"
-                }.to_json
-              )
+              message.forward_via_email(a)
             end
           end
         end
