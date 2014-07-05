@@ -72,9 +72,7 @@ module Libertree
       def mark_as_unread_by_all( options = {} )
         except_accounts = options.fetch(:except, [])
         if except_accounts.any?
-          ids = except_accounts.map { |a| a.id }
-          placeholders = ( ['?'] * ids.count ).join(', ')
-          DB.dbh[ "DELETE FROM posts_read WHERE post_id = ? AND NOT account_id IN (#{placeholders})", self.id, *ids ].get
+          DB.dbh[:posts_read].where('post_id = ? AND NOT account_id IN ?', self.id, except_accounts.map(&:id)).delete
         else
           DB.dbh[ "DELETE FROM posts_read WHERE post_id = ?", self.id ].get
         end
