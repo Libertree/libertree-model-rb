@@ -6,6 +6,7 @@ module Libertree
     class Post < Sequel::Model(:posts)
       include IsRemoteOrLocal
       extend HasSearchableText
+      include HasDisplayText
 
       def after_create
         super
@@ -159,14 +160,6 @@ module Libertree
         return []  if usernames.empty?
 
         Libertree::Model::Account.where(username: usernames).all
-      end
-
-      def glimpse( length = 60 )
-        if self.text.length <= length
-          self.text
-        else
-          self.text[0...length] + '...'
-        end
       end
 
       def before_destroy

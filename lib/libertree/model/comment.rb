@@ -2,6 +2,7 @@ module Libertree
   module Model
     class Comment < Sequel::Model(:comments)
       extend HasSearchableText
+      include HasDisplayText
 
       def after_create
         super
@@ -58,21 +59,6 @@ module Libertree
       def delete_cascade(force=false)
         self.before_destroy  unless force
         DB.dbh[ "SELECT delete_cascade_comment(?)", self.id ].get
-      end
-
-      # TODO: DRY up with Post#glimpse
-      def glimpse( length = 60 )
-        t = self.text.lines.reject { |l| l =~ /^> / }.join("\n")
-        if t.strip.empty?
-          t = self.text
-        end
-        t.strip!
-
-        if t.length <= length
-          t
-        else
-          t[0...length] + '...'
-        end
       end
 
       def self.create(*args)

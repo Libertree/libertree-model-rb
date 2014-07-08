@@ -1,6 +1,8 @@
 module Libertree
   module Model
     class Message < Sequel::Model(:messages)
+      include HasDisplayText
+
       def sender
         @sender ||= Member[self.sender_member_id]
       end
@@ -105,14 +107,6 @@ module Libertree
 
       def visible_to?(account)
         self.sender == account.member || recipients.include?(account.member)
-      end
-
-      def glimpse( length = 60 )
-        if self.text.length <= length
-          self.text
-        else
-          self.text[0...length] + '...'
-        end
       end
 
       def self.create_with_recipients(args)
