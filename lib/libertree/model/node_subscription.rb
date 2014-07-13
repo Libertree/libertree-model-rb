@@ -10,6 +10,7 @@ module Libertree
 
       def self.for(jid_or_host)
         return self  unless jid_or_host
+        jid_or_host = jid_or_host.to_s
         if jid_or_host.include?('@')
           self.where(jid: jid_or_host)
         else
