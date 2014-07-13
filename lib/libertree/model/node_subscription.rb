@@ -6,6 +6,8 @@ module Libertree
                  :unconfigured,
                  :subscribed ]
 
+      many_to_one :node
+
       def self.for(jid_or_host)
         return self  unless jid_or_host
         if jid_or_host.include?('@')
