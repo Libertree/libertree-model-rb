@@ -7,6 +7,8 @@ module Libertree
                 :member,
                 :none,
                 :outcast ]
+
+      many_to_one :node
     end
   end
 end
