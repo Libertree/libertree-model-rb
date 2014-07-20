@@ -55,6 +55,22 @@ module Libertree
         @query_components.dup
       end
 
+      def query_parts
+        if ! @query_parts
+          @query_parts = {:negations => [], :requirements => [], :regular => []}
+          query_components.each { |term|
+            if term =~ /^-(.+)$/
+              @query_parts[:negations] << $1
+            elsif term =~ /^\+(.+)$/
+              @query_parts[:requirements] << $1
+            else
+              @query_parts[:regular] << term
+            end
+          }
+        end
+        @query_parts.dup
+      end
+
       def term_matches_post?(term, post)
         case term
         when /^:forest$/
@@ -102,25 +118,14 @@ module Libertree
       end
 
       def matches_post?(post)
-        parts = {:negations => [], :requirements => [], :regular => []}
-        query_components.each { |term|
-          if term =~ /^-(.+)$/
-            parts[:negations] << $1
-          elsif term =~ /^\+(.+)$/
-            parts[:requirements] << $1
-          else
-            parts[:regular] << term
-          end
-        }
-
         # Negations: Must not satisfy any of the conditions
         # Requirements: Must satisfy every required condition
         # Regular terms: Must satisfy at least one condition
         test = lambda {|term| term_matches_post?(term, post)}
 
-        parts[:negations].none?(&test) &&
-          parts[:requirements].all?(&test) &&
-          (parts[:regular].any? ? parts[:regular].any?(&test) : true)
+        query_parts[:negations].none?(&test) &&
+          query_parts[:requirements].all?(&test) &&
+          (query_parts[:regular].any? ? query_parts[:regular].any?(&test) : true)
       end
 
       def refresh_posts( n = 512 )
