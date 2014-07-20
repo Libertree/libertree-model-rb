@@ -103,15 +103,14 @@ module Libertree
 
       def matches_post?(post)
         parts = {:negations => [], :requirements => [], :regular => []}
-        query_components.reduce(parts) { |acc,term|
+        query_components.each { |term|
           if term =~ /^-(.+)$/
-            acc[:negations] << $1
+            parts[:negations] << $1
           elsif term =~ /^\+(.+)$/
-            acc[:requirements] << $1
+            parts[:requirements] << $1
           else
-            acc[:regular] << term
+            parts[:regular] << term
           end
-          acc
         }
 
         # Negations: Must not satisfy any of the conditions
