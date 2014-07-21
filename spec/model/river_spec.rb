@@ -15,6 +15,13 @@ describe Libertree::Model::River do
       expect( river.query_components.values.flatten ).to match_array(expected)
     end
 
+    def test_exact( query, expected )
+      river = Libertree::Model::River.create(
+        FactoryGirl.attributes_for( :river, label: query, query: query, account_id: @account.id )
+      )
+      expect( river.query_components ).to eq(expected)
+    end
+
     it "splits the text of the river's query along spaces into an Array of words" do
       test_one  'test', ['test']
       test_one  'test two', ['test', 'two']
@@ -94,6 +101,14 @@ describe Libertree::Model::River do
     it 'treats :via "..." as a single term' do
       test_one  ':via "something or other"', [ ':via "something or other"', ]
       test_one  'foo :via "abcdef"', [ 'foo', ':via "abcdef"', ]
+    end
+
+    it 'considers single word terms as static' do
+      test_exact 'foo bar baz', {:static => ['foo', 'bar', 'baz'], :dynamic => []}
+    end
+
+    it 'considers special terms as dynamic' do
+      test_exact 'foo bar baz :word-count > 10', {:static => ['foo', 'bar', 'baz'], :dynamic => [':word-count > 10']}
     end
   end
 
