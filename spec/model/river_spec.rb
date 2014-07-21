@@ -12,7 +12,7 @@ describe Libertree::Model::River do
       river = Libertree::Model::River.create(
         FactoryGirl.attributes_for( :river, label: query, query: query, account_id: @account.id )
       )
-      river.query_components.should == expected
+      expect( river.query_components.values.flatten ).to match_array(expected)
     end
 
     it "splits the text of the river's query along spaces into an Array of words" do
