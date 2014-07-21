@@ -146,8 +146,7 @@ module Libertree
 
         matching = posts.find_all { |post| self.matches_post? post }
         if matching.any?
-          placeholders = ( ['?'] * matching.count ).join(', ')
-          DB.dbh[ "INSERT INTO river_posts SELECT ?, id FROM posts WHERE id IN (#{placeholders})", self.id, *matching.map(&:id)].get
+          DB.dbh[ "INSERT INTO river_posts SELECT ?, id FROM posts WHERE id IN ?", self.id, matching.map(&:id)].get
         end
       end
 
