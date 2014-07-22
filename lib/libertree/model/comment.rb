@@ -1,6 +1,7 @@
 module Libertree
   module Model
     class Comment < Sequel::Model(:comments)
+      include IsRemoteOrLocal
       extend HasSearchableText
       include HasDisplayText
 
@@ -15,10 +16,6 @@ module Libertree
             *self.forests
           )
         end
-      end
-
-      def local?
-        ! remote_id
       end
 
       # TODO: DB: association
@@ -100,14 +97,7 @@ module Libertree
         CommentLike[ member_id: member.id, comment_id: self.id ]
       end
 
-      def server
-        self.member.server
-      end
-
-      def public_id
-        self.remote_id || self.id
-      end
-
+      # overriding method from IsRemoteOrLocal
       def forests
         if self.post.remote?
           self.post.server.forests
