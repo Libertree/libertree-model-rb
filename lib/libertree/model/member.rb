@@ -123,28 +123,14 @@ module Libertree
 
       def posts( opts = {} )
         limit = opts.fetch(:limit, 30)
-        if opts[:newer]
-          time_comparator = '>'
-        else
-          time_comparator = '<'
-        end
         time = Time.at( opts.fetch(:time, Time.now.to_f) ).strftime("%Y-%m-%d %H:%M:%S.%6N%z")
+        time_clause = if opts[:newer]
+                        proc { time_created > time }
+                      else
+                        proc { time_created < time }
+                      end
 
-        Post.s(
-          %{
-            SELECT
-              p.*
-            FROM
-              posts p
-            WHERE
-              member_id = ?
-              AND p.time_created #{time_comparator} ?
-            ORDER BY p.time_created DESC
-            LIMIT #{limit}
-          },
-          self.id,
-          time
-        )
+        Post.where(member_id: self.id).where(&time_clause).order(:time_created).limit(limit)
       end
 
       def comments(n = 10)
