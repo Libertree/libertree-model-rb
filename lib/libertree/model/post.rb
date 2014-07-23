@@ -316,6 +316,48 @@ module Libertree
                               }
                             }) ]
       end
+
+      # Expand and embed all associated records.
+      def self.get_full(*args)
+        # cache member records
+        members = Hash.new
+        members.default_proc = proc do |hash, key|
+          hash[key] = Member[ key ]
+        end
+
+        post = self[*args]
+        comments = post.comments
+        comment_likes = CommentLike.where('comment_id IN ?', comments.map(&:id)).reduce({}) do |hash, like|
+          if hash[like.comment_id]
+            hash[like.comment_id] << like
+          else
+            hash[like.comment_id] = [like]
+          end
+          hash
+        end
+
+        like_proc = proc do |like|
+          like.define_singleton_method(:member) { members[like.member_id] }
+          like
+        end
+
+        # enhance post object with expanded associations
+        post.define_singleton_method(:member) { members[post.member_id] }
+        post.define_singleton_method(:likes)  { post.likes.map{|l| like_proc.call(l)} }
+        post.define_singleton_method(:comments) do
+          comments.map do |comment|
+            comment.define_singleton_method(:member) { members[comment.member_id] }
+            comment.define_singleton_method(:likes) do
+              if comment_likes[comment.id]
+                comment_likes[comment.id].map{|l| like_proc.call(l)}
+              end
+            end
+            comment
+          end
+        end
+
+        post
+      end
     end
   end
 end
