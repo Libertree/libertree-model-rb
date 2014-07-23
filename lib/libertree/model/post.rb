@@ -351,6 +351,8 @@ module Libertree
             comment.define_singleton_method(:likes) do
               if comment_likes[comment.id]
                 comment_likes[comment.id].map{|l| like_proc.call(l)}
+              else
+                []
               end
             end
             comment
