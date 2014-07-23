@@ -295,6 +295,27 @@ module Libertree
       def distribute?
         self.visibility != 'tree'
       end
+
+      def self.as_nested_json(id)
+        post = self[id]
+        JSON[ post.to_json( :include => {
+                              :member => {},
+                              :likes => {
+                                :include => {
+                                  :member => {}
+                                }},
+                              :comments => {
+                                :include => {
+                                  :member => {},
+                                  :likes => {
+                                    :include => {
+                                      :member => {}
+                                    }
+                                  }
+                                }
+                              }
+                            }) ]
+      end
     end
   end
 end

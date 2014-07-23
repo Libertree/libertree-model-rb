@@ -3,6 +3,7 @@ require_relative 'compat'
 Sequel::Model.plugin :dirty
 Sequel::Model.plugin :compat
 Sequel::Model.unrestrict_primary_key
+Sequel::Model.plugin :json_serializer
 
 require_relative 'model/is-remote-or-local'
 require_relative 'model/has-searchable-text'
