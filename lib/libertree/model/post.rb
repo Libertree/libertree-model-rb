@@ -357,7 +357,7 @@ module Libertree
         # enhance post object with expanded associations
         post.define_singleton_method(:member) { members[post.member_id] }
         post.define_singleton_method(:likes)  { post_likes.map{|l| like_proc.call(l)} }
-        post.define_singleton_method(:comments) { comments }
+        post.define_singleton_method(:comments) {|opts=nil| comments }
 
         post
       end
