@@ -342,22 +342,22 @@ module Libertree
           like
         end
 
+        comments = comments.map do |comment|
+          likes = if comment_likes[comment.id]
+                    comment_likes[comment.id].map{|l| like_proc.call(l)}
+                  else
+                    []
+                  end
+
+          comment.define_singleton_method(:member) { members[comment.member_id] }
+          comment.define_singleton_method(:likes) { likes }
+          comment
+        end
+
         # enhance post object with expanded associations
         post.define_singleton_method(:member) { members[post.member_id] }
         post.define_singleton_method(:likes)  { post_likes.map{|l| like_proc.call(l)} }
-        post.define_singleton_method(:comments) do
-          comments.map do |comment|
-            comment.define_singleton_method(:member) { members[comment.member_id] }
-            comment.define_singleton_method(:likes) do
-              if comment_likes[comment.id]
-                comment_likes[comment.id].map{|l| like_proc.call(l)}
-              else
-                []
-              end
-            end
-            comment
-          end
-        end
+        post.define_singleton_method(:comments) { comments }
 
         post
       end
