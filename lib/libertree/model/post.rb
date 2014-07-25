@@ -351,6 +351,8 @@ module Libertree
 
           comment.define_singleton_method(:member) { members[comment.member_id] }
           comment.define_singleton_method(:likes) { likes }
+          comment.define_singleton_method(:post) { post }
+
           comment
         end
 
