@@ -318,14 +318,18 @@ module Libertree
       end
 
       # Expand and embed all associated records.
-      def self.get_full(*args)
+      def self.get_full(id)
+        if cached = Libertree::MODELCACHE.get("#{self.cache_key(id)}:get_full")
+          return cached
+        end
+
         # cache member records
         members = Hash.new
         members.default_proc = proc do |hash, key|
           hash[key] = Member[ key ]
         end
 
-        post = self[*args]
+        post = self[id]
         post_likes = post.likes
         comments = post.comments
 
@@ -370,6 +374,7 @@ module Libertree
           res
         }
 
+        Libertree::MODELCACHE.set("#{self.cache_key(id)}:get_full", post, 60)
         post
       end
     end
