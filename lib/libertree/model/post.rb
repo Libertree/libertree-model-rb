@@ -326,7 +326,10 @@ module Libertree
         # cache member records
         members = Hash.new
         members.default_proc = proc do |hash, key|
-          hash[key] = Member[ key ]
+          member = Member[ key ]
+          name = member.name_display
+          member.define_singleton_method(:name_display) { name }
+          hash[key] = member
         end
 
         post = self[id]

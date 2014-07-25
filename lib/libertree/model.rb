@@ -42,5 +42,6 @@ require 'timedcache'
 Libertree::MODELCACHE = TimedCache.new
 Libertree::Model::Server.plugin  :caching, Libertree::MODELCACHE, :ttl=>86400
 Libertree::Model::Member.plugin  :caching, Libertree::MODELCACHE, :ttl=>1800
+Libertree::Model::Profile.plugin :caching, Libertree::MODELCACHE, :ttl=>1800
 Libertree::Model::Post.plugin    :caching, Libertree::MODELCACHE, :ttl=>120
 Libertree::Model::Comment.plugin :caching, Libertree::MODELCACHE, :ttl=>120
