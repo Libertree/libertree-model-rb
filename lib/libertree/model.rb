@@ -37,3 +37,10 @@ require_relative 'model/remote-storage-connection'
 require_relative 'model/server'
 require_relative 'model/session-account'
 require_relative 'model/url-expansion'
+
+require 'timedcache'
+Libertree::MODELCACHE = TimedCache.new
+Libertree::Model::Server.plugin  :caching, Libertree::MODELCACHE, :ttl=>86400
+Libertree::Model::Member.plugin  :caching, Libertree::MODELCACHE, :ttl=>1800
+Libertree::Model::Post.plugin    :caching, Libertree::MODELCACHE, :ttl=>120
+Libertree::Model::Comment.plugin :caching, Libertree::MODELCACHE, :ttl=>120
