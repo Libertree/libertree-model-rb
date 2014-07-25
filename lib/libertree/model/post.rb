@@ -365,7 +365,7 @@ module Libertree
           if opts
             res = res.find_all {|c| c.id >= opts[:from_id].to_i}  if opts[:from_id]
             res = res.find_all {|c| c.id < opts[:to_id].to_i}     if opts[:to_id]
-            res = res.take(opts[:limit].to_i)                     if opts[:limit]
+            res = res.last(opts[:limit].to_i)                     if opts[:limit]
           end
           res
         }
