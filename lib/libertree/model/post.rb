@@ -328,6 +328,7 @@ module Libertree
         post = self[*args]
         post_likes = post.likes
         comments = post.comments
+
         comment_likes = CommentLike.where('comment_id IN ?', comments.map(&:id)).reduce({}) do |hash, like|
           if hash[like.comment_id]
             hash[like.comment_id] << like
@@ -359,7 +360,15 @@ module Libertree
         # enhance post object with expanded associations
         post.define_singleton_method(:member) { members[post.member_id] }
         post.define_singleton_method(:likes)  { post_likes.map{|l| like_proc.call(l)} }
-        post.define_singleton_method(:comments) {|opts=nil| comments }
+        post.define_singleton_method(:comments) {|opts={}|
+          res = comments
+          if opts
+            res = res.find_all {|c| c.id >= opts[:from_id].to_i}  if opts[:from_id]
+            res = res.find_all {|c| c.id < opts[:to_id].to_i}     if opts[:to_id]
+            res = res.take(opts[:limit].to_i)                     if opts[:limit]
+          end
+          res
+        }
 
         post
       end
