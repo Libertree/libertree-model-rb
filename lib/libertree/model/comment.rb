@@ -94,7 +94,12 @@ module Libertree
       end
 
       def like_by(member)
-        CommentLike[ member_id: member.id, comment_id: self.id ]
+        # take advantage of cached self.likes
+        if self.likes.is_a? Array
+          self.likes.find {|like| like.member.id == member.id}
+        else
+          CommentLike[ member_id: member.id, comment_id: self.id ]
+        end
       end
 
       # overriding method from IsRemoteOrLocal
