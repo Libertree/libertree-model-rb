@@ -121,8 +121,7 @@ module Libertree
           'comment_id' => comment.id,
         }
         accounts = comment.post.subscribers
-        accounts.delete comment.member.account
-        accounts.each do |a|
+        accounts.select {|a| a.id != comment.member.account.id } each do |a|
           if ! comment.post.hidden_by?(a)
             a.notify_about notification_attributes
           end
@@ -137,7 +136,7 @@ module Libertree
         local_post_author = like.post.member.account
         like_author = like.member.account
 
-        if local_post_author && local_post_author != like_author
+        if local_post_author && local_post_author.id != like_author.id
           local_post_author.notify_about notification_attributes
         end
       end
