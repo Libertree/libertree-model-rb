@@ -153,6 +153,7 @@ module Libertree
       end
 
       def mentioned_accounts
+        # TODO: work on the parsed HTML representation instead?
         pattern = %r{(?:\W|^)@(\w+)}
         author_name = self.member.username
         usernames = self.text.scan(pattern).flatten.uniq - [author_name]
