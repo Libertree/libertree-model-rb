@@ -322,6 +322,9 @@ module Libertree
           return cached
         end
 
+        post = self[id]
+        return  unless post
+
         # cache member records
         members = Hash.new
         members.default_proc = proc do |hash, key|
@@ -331,7 +334,6 @@ module Libertree
           hash[key] = member
         end
 
-        post = self[id]
         post_likes = post.likes
         comments = post.comments
 
