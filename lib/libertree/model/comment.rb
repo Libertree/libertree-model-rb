@@ -76,8 +76,7 @@ module Libertree
       end
 
       def likes
-        return @likes  if @likes
-        @likes = CommentLike.s("SELECT * FROM comment_likes WHERE comment_id = ? ORDER BY id DESC", self.id)
+        @likes ||= CommentLike.where(comment_id: self.id).reverse_order(:id)
       end
 
       def notify_about_like(like)
@@ -123,19 +122,7 @@ module Libertree
 
       # TODO: When more visibilities come, restrict this result set by visibility
       def self.comments_since_id(comment_id)
-        self.s(
-          %{
-            SELECT
-              c.*
-            FROM
-              comments c
-            WHERE
-              c.id > ?
-            ORDER BY
-              c.id
-          },
-          comment_id
-        )
+        self.where{ :id > comment_id }.order(:id)
       end
 
       # @param [Hash] opt options for restricting the comment set returned

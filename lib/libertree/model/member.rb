@@ -134,7 +134,7 @@ module Libertree
       end
 
       def comments(n = 10)
-        Comment.s  "SELECT * FROM comments WHERE member_id = ? ORDER BY id DESC LIMIT #{n.to_i}", self.id
+        Comment.where(member_id: self.id).reverse_order(:id).limit(n)
       end
 
       def pools
