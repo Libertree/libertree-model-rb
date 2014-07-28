@@ -183,6 +183,10 @@ module Libertree
       # NOTE: deletion is NOT distributed when force=true
       def delete_cascade(force=false)
         self.before_destroy  unless force
+        # clear cached posts
+        Libertree::MODELCACHE.delete(self.cache_key)
+        Libertree::MODELCACHE.delete("#{self.cache_key}:get_full")
+
         DB.dbh[ "SELECT delete_cascade_post(?)", self.id ].get
       end
 
@@ -265,6 +269,10 @@ module Libertree
           visibility:   visibility,
           time_updated: Time.now
         )
+
+        # clear cached posts
+        Libertree::MODELCACHE.delete(self.cache_key)
+        Libertree::MODELCACHE.delete("#{self.cache_key}:get_full")
         mark_as_unread_by_all
       end
 
