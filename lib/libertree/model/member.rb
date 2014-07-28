@@ -130,7 +130,7 @@ module Libertree
                         proc { time_created < time }
                       end
 
-        Post.where(member_id: self.id).where(&time_clause).order(:time_created).limit(limit)
+        Post.where(member_id: self.id).where(&time_clause).reverse_order(:time_created).limit(limit)
       end
 
       def comments(n = 10)
