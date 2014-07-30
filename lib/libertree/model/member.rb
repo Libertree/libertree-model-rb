@@ -130,7 +130,14 @@ module Libertree
                         proc { time_created < time }
                       end
 
-        Post.where(member_id: self.id).where(&time_clause).reverse_order(:time_created).limit(limit)
+        res = Post.where(member_id: self.id).
+          where(&time_clause).
+          reverse_order(:time_created).
+          limit(limit)
+
+        # optionally restrict to Internet visible posts
+        res = res.where(visibility: 'internet')  if opts[:public]
+        res
       end
 
       def comments(n = 10)
