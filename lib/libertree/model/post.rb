@@ -46,7 +46,7 @@ module Libertree
 
       # TODO: DB: replace with association
       def member
-        @member = Member[self.member_id]
+        @member ||= Member[self.member_id]
       end
 
       def time_updated_overall

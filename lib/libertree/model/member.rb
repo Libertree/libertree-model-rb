@@ -49,7 +49,7 @@ module Libertree
       # TODO: DB: association
       #many_to_one :server
       def server
-        @server = Server[self.server_id]
+        @server ||= Server[self.server_id]
       end
       alias :tree :server
 
