@@ -41,7 +41,7 @@ describe Libertree::Model::Member do
   end
 
   describe '.search' do
-    before :each do
+    before :all do
       Libertree::DB.dbh.execute 'TRUNCATE members CASCADE'
       Libertree::DB.dbh.execute 'TRUNCATE accounts CASCADE'
     end
