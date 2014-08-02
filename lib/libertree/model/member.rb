@@ -69,36 +69,21 @@ module Libertree
         if h =~ /^(.+?)@(.+?)$/
           username = $1
           host = $2
-          self.s(
-            %{
-              SELECT m.*
-              FROM
-                  members m
-                , servers s
-              WHERE
-                m.username = ?
-                AND s.id = m.server_id
-                AND (
-                  s.name_given = ?
-                  OR s.domain = ?
-                )
-            },
-            username, host, host
-          ).first
+
+          # TODO: servers.name_given is no longer used.  Remove it after
+          # migrating user rivers/contact lists etc.
+          self.qualify.
+            join(:servers, :id=>:server_id).
+            where(:members__username => username).
+            where(Sequel.or(:servers__domain => host, :servers__name_given => host)).
+            limit(1).
+            first
         else
-          self.s(
-            %{
-              SELECT
-                m.*
-              FROM
-                  members m
-                , accounts a
-              WHERE
-                a.id = m.account_id
-                AND a.username = ?
-            },
-            h
-          ).first
+          self.qualify.
+            join(:accounts, :id=>:account_id).
+            where(:accounts__username => h).
+            limit(1).
+            first
         end
       end
 
