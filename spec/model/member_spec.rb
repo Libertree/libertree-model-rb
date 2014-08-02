@@ -24,6 +24,22 @@ describe Libertree::Model::Member do
     end
   end
 
+  describe '.with_handle' do
+    it 'gets the member record with a matching handle on a remote server' do
+      @server = Libertree::Model::Server.create( FactoryGirl.attributes_for(:server) )
+      @member = Libertree::Model::Member.create(
+        FactoryGirl.attributes_for(:member, :server_id => @server.id)
+      )
+      expect( Libertree::Model::Member.with_handle(@member.handle) ).to eq(@member)
+    end
+
+    it 'gets the member record with a matching handle on the local server' do
+      account = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
+      @member = account.member
+      expect( Libertree::Model::Member.with_handle(@member.handle) ).to eq(@member)
+    end
+  end
+
   describe '.search' do
     before :each do
       Libertree::DB.dbh.execute 'TRUNCATE members CASCADE'
