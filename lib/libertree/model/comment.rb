@@ -122,7 +122,7 @@ module Libertree
 
       # TODO: When more visibilities come, restrict this result set by visibility
       def self.comments_since_id(comment_id)
-        self.where{ :id > comment_id }.order(:id)
+        self.where{ id > comment_id }.order(:id)
       end
 
       # @param [Hash] opt options for restricting the comment set returned
