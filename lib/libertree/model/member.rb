@@ -54,7 +54,7 @@ module Libertree
       alias :tree :server
 
       def name_display
-        @name_display ||= ( profile && profile.name_display || self.handle )
+        @name_display ||= ( profile && profile.name_display || self.username )
       end
 
       def handle
