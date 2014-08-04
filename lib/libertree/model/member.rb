@@ -60,8 +60,8 @@ module Libertree
       def handle
         if self.username && self.server
           self.username + "@#{self.server.name_display}"
-        else
-          account.username  if account
+        elsif account
+          account.username + "@#{Server.own_domain}"
         end
       end
 
@@ -69,19 +69,27 @@ module Libertree
         if h =~ /^(.+?)@(.+?)$/
           username = $1
           host = $2
+          if host == Server.own_domain
+            local = true
+          end
+        else
+          username = h
+          local = true
+        end
 
+        if local
+          self.qualify.
+            join(:accounts, :id=>:account_id).
+            where(:accounts__username => username).
+            limit(1).
+            first
+        else
           # TODO: servers.name_given is no longer used.  Remove it after
           # migrating user rivers/contact lists etc.
           self.qualify.
             join(:servers, :id=>:server_id).
             where(:members__username => username).
             where(Sequel.or(:servers__domain => host, :servers__name_given => host)).
-            limit(1).
-            first
-        else
-          self.qualify.
-            join(:accounts, :id=>:account_id).
-            where(:accounts__username => h).
             limit(1).
             first
         end
