@@ -18,13 +18,12 @@ describe Libertree::Model::Post do
       @john, @paul, @george, @ringo = [ 'john', 'paul', 'george', 'ringo'].map do |name|
         Libertree::Model::Account.create( username: name, password_encrypted: 'p' )
       end
-    end
-    before :each do
-      new_post "@john and paul@paul went to see @george but found @ringo."
+      Libertree::Model::Server.own_domain = "localhost.net"
     end
 
     describe '#mentioned_accounts' do
       it 'returns all accounts but Paul\'s' do
+        new_post "@john and paul@paul went to see @george but found @ringo@localhost.net."
         expect(@post.mentioned_accounts).to match_array([@john, @george, @ringo])
       end
 
