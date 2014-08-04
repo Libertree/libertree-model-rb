@@ -32,8 +32,11 @@ describe Libertree::Model::Account do
       # "deleted" flag is used as a filter parameter only, so that
       # only existing messages are returned.  For this test it is thus
       # required to ignore the "deleted" flag.
-      result = [message_sent, message_received].map {|m| m.values.delete_if{|k| k == :deleted}; m}
-      expect( @account.messages ).to match_array result
+
+      # TODO: we only compare message ids for now.  Expand this later
+      # to match against the full objects.
+      result = [message_sent, message_received].map(&:id)
+      expect( @account.messages.map(&:id) ).to match_array result
     end
   end
 
