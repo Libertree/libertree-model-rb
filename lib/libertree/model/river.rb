@@ -121,10 +121,19 @@ module Libertree
         when /^:contact-list "(.+?)"$/
           self.account.has_contact_list_by_name_containing_member?  $1, post.member
         when /^:from "(.+?)"$/
-          (
-            post.member.handle == $1 ||
-            post.member.name_display == $1
-          )
+          # TODO: eventually, only match against post.member.handle
+          # Need to rewrite existing queries for that.
+          if post.local?
+            (
+              post.member.username == $1 ||
+              post.member.name_display == $1
+            )
+          else
+            (
+              post.member.handle == $1 ||
+              post.member.name_display == $1
+            )
+          end
         when /^:river "(.+?)"$/
           river = River[label: $1]
           river && river.matches_post?(post)
