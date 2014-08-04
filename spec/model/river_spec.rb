@@ -184,7 +184,7 @@ describe Libertree::Model::River do
     context 'given two different remote posters' do
       before do
         server = Libertree::Model::Server.create(
-          FactoryGirl.attributes_for(:server, name_given: 'remote' )
+          FactoryGirl.attributes_for(:server, domain: 'remote' )
         )
         @member4 = Libertree::Model::Member.create(
           FactoryGirl.attributes_for( :member, username: 'poster3', server_id: server.id )
