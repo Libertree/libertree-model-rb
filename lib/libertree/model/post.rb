@@ -160,7 +160,7 @@ module Libertree
 
         # find all JIDs first
         # TODO: username matching (left here for compatibility reasons) is deprecated
-        pattern_jid = %r{(?:\W|^)@(\w+@\w(?:.\w)+)}
+        pattern_jid = %r{(?:\W|^)@(\w+@\w+(?:\.\w+)+)}
         pattern_old = %r{(?:\W|^)@(\w+)}
         pattern =  Regexp.union(pattern_jid, pattern_old)
 
