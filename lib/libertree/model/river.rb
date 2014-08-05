@@ -203,7 +203,7 @@ module Libertree
                              parts[:regular].join(' | '))
         end
 
-        matching = posts.order(:id).limit(n).find_all { |post| self.matches_post?(post, false) }
+        matching = posts.reverse_order(:id).limit(n).find_all { |post| self.matches_post?(post, false) }
 
         # delete late to minimise interruption
         DB.dbh[ "DELETE FROM river_posts WHERE river_id = ?", self.id ].get
