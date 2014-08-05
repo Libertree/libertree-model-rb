@@ -67,7 +67,14 @@ module Libertree
             # m[0] = match of phrase_pat
             # m[6] = match of tag_pat
             # m[7] = match of word_pat
-            static  << m[7]
+
+            # Only treat a matched word as a simple word if it consists only of word
+            # characters.  This excludes URLs or other terms with special characters.
+            if m[7] =~ /^[[:word:]]+$/
+              static << m[7]
+            else
+              dynamic << m[7]
+            end
 
             # the gsub expression takes the phrase out of its quotes
             phrase = m[0].gsub(/^([+-])"/, "\\1").gsub(/^"|"$/, '')  if m[0]
