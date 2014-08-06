@@ -6,6 +6,23 @@ describe Libertree::Model::River do
     @account = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
   end
 
+  describe '#refresh_posts' do
+    it 'limits the result set' do
+      id = @account.member.id
+      (1..25).each do |n|
+        Libertree::Model::Post.create(FactoryGirl.attributes_for( :post, member_id: id, text: n ))
+      end
+      river = Libertree::Model::River.create(
+        FactoryGirl.attributes_for( :river, label: ':forest', query: ':forest', account_id: @account.id )
+      )
+      river.refresh_posts(10)
+      expect( river.posts.count ).to eq(10)
+
+      river.refresh_posts(100)
+      expect( river.posts.count ).to eq(25)
+    end
+  end
+
   describe '#query_components' do
 
     def test_one( query, expected )
