@@ -70,7 +70,7 @@ module Libertree
 
             # Only treat a matched word as a simple word if it consists only of word
             # characters.  This excludes URLs or other terms with special characters.
-            if m[7] =~ /^[[:word:]]+$/
+            if m[7] =~ /^([+-])?[[:word:]]+$/
               static << m[7]
             else
               dynamic << m[7]
