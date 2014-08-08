@@ -199,17 +199,17 @@ module Libertree
 
       def term_matches_post?(term, post)
         case term
-        when /^:forest$/
+        when ':forest'
           true  # Every post is a post in the forest.  :forest is sort of a no-op term
-        when /^:tree$/
+        when ':tree'
           post.member.account
-        when /^:unread$/
+        when ':unread'
           ! post.read_by?(self.account)
-        when /^:liked$/
+        when ':liked'
           post.liked_by? self.account.member
-        when /^:commented$/
+        when ':commented'
           post.commented_on_by? self.account.member
-        when /^:subscribed$/
+        when ':subscribed'
           self.account.subscribed_to? post
         when /^:contact-list "(.+?)"$/
           self.account.has_contact_list_by_name_containing_member?  $1, post.member
