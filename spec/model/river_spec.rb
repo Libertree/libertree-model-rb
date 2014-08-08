@@ -19,7 +19,7 @@ describe Libertree::Model::River do
       expect( river.posts.count ).to eq(10)
 
       river.refresh_posts(100)
-      expect( river.posts.count ).to eq(25)
+      expect( river.posts({limit: 1000}).count ).to eq([Libertree::Model::Post.count, 100].min)
     end
   end
 
