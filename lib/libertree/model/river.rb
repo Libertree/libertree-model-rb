@@ -28,6 +28,92 @@ module Libertree
                opts.fetch(:limit, 30))
       end
 
+      def parsed_query(override_cache=false)
+        return @parsed_query  if @parsed_query && ! override_cache
+
+        patterns = {
+          'phrase'       => /(?<sign>[+-])?"(?<arg>[^"]+)"/,
+          'from'         => /(?<sign>[+-])?:from "(?<arg>.+?)"/,
+          'river'        => /(?<sign>[+-])?:river "(?<arg>.+?)"/,
+          'contact-list' => /(?<sign>[+-])?:contact-list "(?<arg>.+?)"/,
+          'via'          => /(?<sign>[+-])?:via "(?<arg>.+?)"/,
+          'visibility'   => /(?<sign>[+-])?:visibility (?<arg>[a-z-]+)/,
+          'word-count'   => /(?<sign>[+-])?:word-count ?(?<arg>(?<comp>[<>]) ?(?<num>[0-9]+))/,
+          'spring'       => /(?<sign>[+-])?:spring (?<arg>"(?<spring_name>.+?)" "(?<handle>.+?)")/,
+          'flag'         => /(?<sign>[+-])?:(?<arg>forest|tree|unread|liked|commented|subscribed)/,
+          'tag'          => /(?<sign>[+-])?#(?<arg>\S+)/,
+          'word'         => /(?<sign>[+-])?(?<arg>\S+)/,
+        }
+
+        res = Hash.new
+        res.default_proc = proc do |hash,key|
+          hash[key] = {
+            :negations    => [],
+            :requirements => [],
+            :regular      => []
+          }
+        end
+
+        scanner = StringScanner.new(self.query)
+        until scanner.eos? do
+          scanner.skip(/ +/)
+          patterns.each_pair do |key, pattern|
+            if term = scanner.scan(pattern)
+              match = term.match(pattern)
+              group = case match[:sign]
+                      when '+'
+                        :requirements
+                      when '-'
+                        :negations
+                      else
+                        :regular
+                      end
+
+              case key
+              when
+                'phrase',
+                'via',
+                'visibility',
+                'word-count',
+                'flag',
+                'tag'
+                res[key][group] << match[:arg]
+              when 'from'
+                if member = Member.with_handle(match[:arg])
+                  res[key][group] << member.id
+                end
+              when 'river'
+                if river = River[label: match[:arg]]
+                  res[key][group] << river  if river.id != self.id
+                end
+              when 'contact-list'
+                if list = ContactList[ account_id: self.account.id, name: match[:arg] ]
+                  res[key][group] << list
+                end
+              when 'spring'
+                if member = Member.with_handle(match[:handle])
+                  pool = Pool[ member_id: member.id, name: match[:spring_name], sprung: true ]
+                  res[key][group] << pool  if pool
+                end
+              when 'word'
+                # Only treat a matched word as a simple word if it consists only of word
+                # characters.  This excludes URLs or other terms with special characters.
+                if match[:arg] =~ /^[[:word:]]+$/
+                  res['word'][group] << match[:arg]
+                else
+                  res['phrase'][group] << match[:arg]
+                end
+              end
+
+              # move on to the next term
+              next res
+            end
+          end
+        end
+
+        @parsed_query = res
+      end
+
       def query_components
         full_query = self.query
         if ! self.appended_to_all
