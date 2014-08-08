@@ -415,6 +415,32 @@ module Libertree
         Libertree::MODELCACHE.set("#{self.cache_key(id)}:get_full", post, 60)
         post
       end
+
+      # @return [Boolean] whether the prospective post text has URLs which have
+      #   already been posted (in another Post)
+      # This method only searches recent posts, not necessarily every post in the DB.
+      def self.urls_already_posted?(prospective_post_text)
+        prospective_post_text.scan(%r{\bhttps?://\S+}) do |url|
+          posts = self.s(
+            %{
+              SELECT id
+              FROM (
+                SELECT *
+                FROM posts
+                ORDER BY id DESC
+                LIMIT 256
+              ) AS subquery
+              WHERE text ~ ( ? || '(\\Z|\\s|$)' )
+            },
+            url
+          )
+          if posts.count > 0
+            return true
+          end
+        end
+
+        false
+      end
     end
   end
 end
