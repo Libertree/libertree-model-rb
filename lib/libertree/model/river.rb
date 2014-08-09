@@ -54,7 +54,13 @@ module Libertree
           }
         end
 
-        scanner = StringScanner.new(self.query)
+        full_query = self.query
+        if ! self.appended_to_all
+          full_query += ' ' + self.account.rivers_appended.map(&:query).join(' ')
+          full_query.strip!
+        end
+
+        scanner = StringScanner.new(full_query)
         until scanner.eos? do
           scanner.skip(/ +/)
           patterns.each_pair do |key, pattern|
