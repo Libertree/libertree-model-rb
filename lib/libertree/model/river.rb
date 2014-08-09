@@ -79,7 +79,8 @@ module Libertree
                 'tag'
                 res[key][group] << match[:arg]
               when 'from'
-                if member = Member.with_handle(match[:arg])
+                # TODO: eventually remove with_display_name check
+                if member = (Member.with_handle(match[:arg]) || Member.with_display_name(match[:arg]))
                   res[key][group] << member.id
                 end
               when 'river'
@@ -91,7 +92,8 @@ module Libertree
                   res[key][group] << list
                 end
               when 'spring'
-                if member = Member.with_handle(match[:handle])
+                # TODO: eventually remove with_display_name check
+                if member = (Member.with_handle(match[:handle]) || Member.with_display_name(match[:handle]))
                   pool = Pool[ member_id: member.id, name: match[:spring_name], sprung: true ]
                   res[key][group] << pool  if pool
                 end
