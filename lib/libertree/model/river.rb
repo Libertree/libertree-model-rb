@@ -279,19 +279,19 @@ module Libertree
         # TODO: this is slow despite indices.
         posts = Post.where{|p| ~Sequel.function(:post_hidden_by_account, p.id, account.id)}
 
-        parts = query_parts[:static]
-        if parts.values.flatten.count > 0
+        words = self.parsed_query['word']
+        if words.values.flatten.count > 0
           # strip query characters
-          parts.each_pair {|k,v| parts[k].each {|word| word.gsub!(/[\(\)&|!]/, '')}}
+          words.each_pair {|k,v| words[k].each {|word| word.gsub!(/[\(\)&|!]/, '')}}
 
           # filter by simple terms first to avoid having to check so many posts
           posts = posts.where(%{to_tsvector('simple', text)
                                @@ (to_tsquery('simple', ?)
                                && to_tsquery('simple', ?)
                                && to_tsquery('simple', ?))},
-                             parts[:negations].map{|w| "!#{w}" }.join(' & '),
-                             parts[:requirements].join(' & '),
-                             parts[:regular].join(' | '))
+                             words[:negations].map{|w| "!#{w}" }.join(' & '),
+                             words[:requirements].join(' & '),
+                             words[:regular].join(' | '))
         end
 
 
@@ -301,7 +301,7 @@ module Libertree
           if count >= n
             false
           else
-            if res = self.matches_post?(post, false)
+            if res = self.matches_post?(post, ['word'])
               count += 1
             end
             res
