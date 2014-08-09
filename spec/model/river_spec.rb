@@ -850,14 +850,6 @@ describe Libertree::Model::River do
         @spring << @post_feed
       end
 
-      it 'does not match posts in pools that have not been sprung' do
-        river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: %|:spring "My Pool" "#{@member.handle}"|, account_id: @account.id )
-        )
-        river.matches_post?(@post_private).should be_false
-        river.matches_post?(@post_feed).should be_false
-      end
-
       it 'matches posts in sprung pools' do
         river = Libertree::Model::River.create(
           FactoryGirl.attributes_for( :river, query: %|:spring "Post Feed" "#{@member.handle}"|, account_id: @account.id )
