@@ -56,6 +56,18 @@ describe Libertree::Model::River do
       expect( @river.parsed_query(true) ).to eq(expected)
     end
 
+    it 'identifies and groups flags' do
+      @river.update(query: '+:forest -:tree :unread :liked :commented :subscribed')
+      expected = {
+        'flag' => {
+          :negations    => ['tree'],
+          :requirements => ['forest'],
+          :regular      => ['unread', 'liked', 'commented', 'subscribed']
+        }
+      }
+      expect( @river.parsed_query(true) ).to eq(expected)
+    end
+
     it 'identifies and groups phrase, via, visibility, word-count and tag' do
       @river.update(query: '+"hello world" -"goodbye ruby tuesday" "sleepy kitty"')
       expected = {
