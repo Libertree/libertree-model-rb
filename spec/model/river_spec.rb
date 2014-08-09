@@ -481,6 +481,8 @@ describe Libertree::Model::River do
       try_one  '+"foo bar"', 'foo bar', true
       try_one  '+"foo bar" baz', 'foo bar bleh', false
       try_one  '+"foo bar" baz', 'foo bar baz', true
+      try_one  '+"foo bar" baz bleh', 'foo bar baz', true
+      try_one  '+"foo bar" baz bleh', 'foo bar bleh', true
     end
 
     it "matches posts liked by the river's account" do
