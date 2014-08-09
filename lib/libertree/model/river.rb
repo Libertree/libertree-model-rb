@@ -250,7 +250,7 @@ module Libertree
         end
       end
 
-      def matches_post?(post, perform_static_checks=true)
+      def matches_post?(post, ignore_keys=[])
         # Negations: Must not satisfy any of the conditions
         # Requirements: Must satisfy every required condition
         # Regular terms: Must satisfy at least one condition
@@ -262,7 +262,8 @@ module Libertree
         }
 
         query = self.parsed_query
-        query.keys.each do |term|
+        keys = query.keys - ignore_keys
+        keys.each do |term|
           test = lambda {|data| term_matches_post?(term, post, data)}
           query[term].keys.each do |group|
             conditions[group] += query[term][group].map(&test)
