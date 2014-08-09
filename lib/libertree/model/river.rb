@@ -205,58 +205,48 @@ module Libertree
         @query_parts.dup
       end
 
-      def term_matches_post?(term, post)
+      def term_matches_post?(term, post, data)
         case term
-        when ':forest'
-          true  # Every post is a post in the forest.  :forest is sort of a no-op term
-        when ':tree'
-          post.member.account
-        when ':unread'
-          ! post.read_by?(self.account)
-        when ':liked'
-          post.liked_by? self.account.member
-        when ':commented'
-          post.commented_on_by? self.account.member
-        when ':subscribed'
-          self.account.subscribed_to? post
-        when /^:contact-list "(.+?)"$/
-          self.account.has_contact_list_by_name_containing_member?  $1, post.member
-        when /^:from "(.+?)"$/
-          # TODO: eventually, only match against post.member.handle
-          # Need to rewrite existing queries for that.
-          if post.local?
-            (
-              post.member.username == $1 ||
-              post.member.name_display == $1
-            )
-          else
-            (
-              post.member.handle == $1 ||
-              post.member.name_display == $1
-            )
+        when 'flag'
+          # TODO: most of these are slow
+          case data
+          when 'forest'
+            true  # Every post is a post in the forest.  :forest is sort of a no-op term
+          when 'tree'
+            post.member.account
+          when 'unread'
+            ! post.read_by?(self.account)
+          when 'liked'
+            post.liked_by? self.account.member
+          when 'commented'
+            post.commented_on_by? self.account.member
+          when 'subscribed'
+            self.account.subscribed_to? post
           end
-        when /^:river "(.+?)"$/
-          river = River[label: $1]
-          river && river.matches_post?(post)
-        when /^:visibility ([a-z-]+)$/
-          post.visibility == $1
-        when /^:word-count < ?([0-9]+)$/
-          n = $1.to_i
-          post.text.scan(/\S+/).count < n
-        when /^:word-count > ?([0-9]+)$/
-          n = $1.to_i
-          post.text.scan(/\S+/).count > n
-        when /^:spring "(.+?)" "(.+?)"$/
-          spring_name, handle = $1, $2
-          member = Member.with_handle(handle)
-          if member
-            pool = Pool[ member_id: member.id, name: spring_name, sprung: true ]
-            pool && pool.includes?(post)
+        when 'contact-list'
+          # TODO: slow
+          data.members.include? post.member
+        when 'from'
+          post.member_id == data
+        when 'river'
+          data.matches_post?(post)
+        when 'visibility'
+          post.visibility == data
+        when 'word-count'
+          case data
+          when /^< ?([0-9]+)$/
+            n = $1.to_i
+            post.text.scan(/\S+/).count < n
+          when /^> ?([0-9]+)$/
+            n = $1.to_i
+            post.text.scan(/\S+/).count > n
           end
-        when /^:via "(.+?)"$/
-          post.via == $1
-        else
-          /(?:^|\b|\s)#{Regexp.escape(term)}(?:\b|\s|$)/i === post.text
+        when 'spring'
+          data.includes?(post)
+        when 'via'
+          post.via == data
+        when 'phrase', 'word'
+          /(?:^|\b|\s)#{Regexp.escape(data)}(?:\b|\s|$)/i === post.text
         end
       end
 
@@ -265,17 +255,23 @@ module Libertree
         # Requirements: Must satisfy every required condition
         # Regular terms: Must satisfy at least one condition
 
-        parts = query_parts[:dynamic].dup
-        if perform_static_checks
-          parts[:negations]    += query_parts[:static][:negations]
-          parts[:requirements] += query_parts[:static][:requirements]
-          parts[:regular]      += query_parts[:static][:regular]
+        conditions = {
+          negations:    [],
+          requirements: [],
+          regular:      []
+        }
+
+        query = self.parsed_query
+        query.keys.each do |term|
+          test = lambda {|data| term_matches_post?(term, post, data)}
+          query[term].keys.each do |group|
+            conditions[group] += query[term][group].map(&test)
+          end
         end
 
-        test = lambda {|term| term_matches_post?(term, post)}
-        parts[:negations].none?(&test) &&
-          parts[:requirements].all?(&test) &&
-          (parts[:regular].any? ? parts[:regular].any?(&test) : true)
+        conditions[:negations].none? &&
+          conditions[:requirements].all? &&
+          (conditions[:regular].count > 0 ? conditions[:regular].any? : true)
       end
 
       def refresh_posts( n = 512 )
