@@ -257,6 +257,8 @@ describe Libertree::Model::Post do
           expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.co#{suffix}")).to be_nil
           expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com#{suffix}")).not_to be_nil
           expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com/#{suffix}")).not_to be_nil
+          expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abcxcom/#{suffix}")).to be_nil
+          expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abcxcom/x?#{suffix}")).to be_nil
           expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com/some#{suffix}")).to be_nil
           expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com/somepath#{suffix}")).not_to be_nil
           expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com/somepath?#{suffix}")).to be_nil
@@ -288,9 +290,10 @@ describe Libertree::Model::Post do
             ['lorem ipsum ', '',],
             ['', ' lorem ipsum',],
             ['lorem ipsum ', ' lorem ipsum',],
+            ['lorem [ipsum](', ') lorem',],
           ].each do |prefix, suffix|
             expect(Libertree::Model::Post.urls_already_posted?("#{prefix}#{url[0..-3]}#{suffix}")).to be_nil
-            expect(Libertree::Model::Post.urls_already_posted?("#{prefix}#{url}#{suffix}")).not_to be_nil, "expected to find an existing Post with text #{url.inspect}"
+            expect(Libertree::Model::Post.urls_already_posted?("#{prefix}#{url}#{suffix}")).not_to be_nil, "expected to find an existing Post containing URLS in submitted text " + "#{prefix}#{url}#{suffix}".inspect
           end
 
           expect(Libertree::Model::Post.urls_already_posted?("aoeu#{url}")).to be_nil

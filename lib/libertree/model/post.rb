@@ -422,7 +422,9 @@ module Libertree
       def self.urls_already_posted?(prospective_post_text)
         posts_found = []
 
-        prospective_post_text.scan(%r{\bhttps?://\S+}) do |url|
+        prospective_post_text.scan(
+          %r{(?<=\]\()https?://\S+?(?=\))|(?<=^|\b)https?://\S+(?=\s|$)}
+        ) do |url|
           posts = self.s(
             %{
               SELECT *
@@ -432,9 +434,11 @@ module Libertree
                 ORDER BY id DESC
                 LIMIT 256
               ) AS subquery
-              WHERE text ~ ( '(^|\\(|\\A|\\s)' || ? || '(\\)|\\Z|\\s|$)' )
+              WHERE text ~ ( '(^|\\A|\\s)' || ? || '(\\)|\\Z|\\s|$)' )
+              OR text ~ ( '\\]\\(' || ? || '\\)' )
               ORDER by time_created
             },
+            Regexp.escape(url),
             Regexp.escape(url)
           )
           if posts.any?
