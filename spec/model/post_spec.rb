@@ -226,4 +226,84 @@ describe Libertree::Model::Post do
       expect( @post.read_by?(@ringo)  ).to be_true
     end
   end
+
+  describe '.urls_already_posted?' do
+    context 'given some posts with URLs' do
+      before do
+        @member = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) ).member
+        new_post "http://abc.com"
+        new_post "http://abc.com/"
+        new_post "http://abc.com/somepath"
+        new_post "http://abc.com/somepath?q=test"
+        new_post "http://abc.com/somepath?q=test&p=foo"
+        new_post "lorem ipsum http://def.com/def"
+        new_post "http://ghi.com/ghi lorem ipsum"
+        new_post "lorem ipsum http://jkl.com/jkl lorem ipsum"
+        new_post "lorem ipsum https://jkl.com/jkl lorem ipsum"
+        new_post "lorem ipsum http://mno.net/mno lorem ipsum http://pqr.org/pqr lorem ipsum"
+        new_post "lorem ipsum\n\nhttp://stu.info/stu\n\nlorem ipsum"
+        new_post "lorem ipsum [lorem ipsum](http://vwx.biz/vwx) lorem ipsum"
+        new_post "lorem ipsum\nlorem ipsum https://qed.net?text=%22To+be+or+not+to+be%3F%22%2C+that+is+the+question.%22\nlorem ipsum"
+        new_post "aoeuhttp://yza.com/yza lorem ipsum"
+      end
+
+      it 'correctly reports the presence or absence of Posts which have those URLs' do
+        [
+          ['', '',],
+          ['lorem ipsum ', '',],
+          ['', ' lorem ipsum',],
+          ['lorem ipsum ', ' lorem ipsum',],
+        ].each do |prefix, suffix|
+          expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.co#{suffix}")).to be_nil
+          expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com#{suffix}")).not_to be_nil
+          expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com/#{suffix}")).not_to be_nil
+          expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com/some#{suffix}")).to be_nil
+          expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com/somepath#{suffix}")).not_to be_nil
+          expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com/somepath?#{suffix}")).to be_nil
+          expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com/somepath?q#{suffix}")).to be_nil
+          expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com/somepath?q=#{suffix}")).to be_nil
+          expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com/somepath?q=te#{suffix}")).to be_nil
+          expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com/somepath?q=test#{suffix}")).not_to be_nil
+          expect(Libertree::Model::Post.urls_already_posted?("#{prefix}http://abc.com/somepath?q=test&p=foo#{suffix}")).not_to be_nil
+        end
+
+        [
+          'http://abc.com',
+          'http://abc.com/',
+          'http://abc.com/somepath',
+          'http://abc.com/somepath?q=test',
+          'http://abc.com/somepath?q=test&p=foo',
+          'http://def.com/def',
+          'http://ghi.com/ghi',
+          'http://jkl.com/jkl',
+          'https://jkl.com/jkl',
+          'http://mno.net/mno',
+          'http://pqr.org/pqr',
+          'http://stu.info/stu',
+          'http://vwx.biz/vwx',
+          'https://qed.net?text=%22To+be+or+not+to+be%3F%22%2C+that+is+the+question.%22',
+        ].each do |url|
+          [
+            ['', '',],
+            ['lorem ipsum ', '',],
+            ['', ' lorem ipsum',],
+            ['lorem ipsum ', ' lorem ipsum',],
+          ].each do |prefix, suffix|
+            expect(Libertree::Model::Post.urls_already_posted?("#{prefix}#{url[0..-3]}#{suffix}")).to be_nil
+            expect(Libertree::Model::Post.urls_already_posted?("#{prefix}#{url}#{suffix}")).not_to be_nil, "expected to find an existing Post with text #{url.inspect}"
+          end
+
+          expect(Libertree::Model::Post.urls_already_posted?("aoeu#{url}")).to be_nil
+          expect(Libertree::Model::Post.urls_already_posted?("#{url}otherchars")).to be_nil
+          expect(Libertree::Model::Post.urls_already_posted?("#{url}/otherchars")).to be_nil
+        end
+
+        expect(Libertree::Model::Post.urls_already_posted?('http://yza.com/yza')).to be_nil
+        expect(Libertree::Model::Post.urls_already_posted?('aoeuhttp://yza.com/yza')).to be_nil
+        expect(Libertree::Model::Post.urls_already_posted?('aoeu http://yza.com/yza')).to be_nil
+        expect(Libertree::Model::Post.urls_already_posted?('http://yza.com/yza aoeu')).to be_nil
+        expect(Libertree::Model::Post.urls_already_posted?('aoeu http://yza.com/yza aoeu')).to be_nil
+      end
+    end
+  end
 end

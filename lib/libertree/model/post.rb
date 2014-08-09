@@ -416,30 +416,33 @@ module Libertree
         post
       end
 
-      # @return [Boolean] whether the prospective post text has URLs which have
-      #   already been posted (in another Post)
+      # @return [Post] the earliest Post which contains a URL that the
+      #   prospective post text contains
       # This method only searches recent posts, not necessarily every post in the DB.
       def self.urls_already_posted?(prospective_post_text)
+        posts_found = []
+
         prospective_post_text.scan(%r{\bhttps?://\S+}) do |url|
           posts = self.s(
             %{
-              SELECT id
+              SELECT *
               FROM (
                 SELECT *
                 FROM posts
                 ORDER BY id DESC
                 LIMIT 256
               ) AS subquery
-              WHERE text ~ ( ? || '(\\Z|\\s|$)' )
+              WHERE text ~ ( '(^|\\(|\\A|\\s)' || ? || '(\\)|\\Z|\\s|$)' )
+              ORDER by time_created
             },
-            url
+            Regexp.escape(url)
           )
-          if posts.count > 0
-            return true
+          if posts.any?
+            posts_found << posts[0]
           end
         end
 
-        false
+        posts_found.sort_by(&:time_created)[0]
       end
     end
   end
