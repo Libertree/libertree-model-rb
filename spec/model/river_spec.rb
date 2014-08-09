@@ -189,6 +189,18 @@ describe Libertree::Model::River do
       expect( @river.parsed_query(true) ).to eq(expected)
     end
 
+    it 'ignores the :spring query if the pool does not exist or is not sprung' do
+      user = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
+      spring = Libertree::Model::Pool.create( member_id: user.member.id,
+                                              sprung: false,
+                                              name: 'river-spec-pool')
+      @river.update(query: ":spring \"river-spec-pool\" \"#{user.member.handle}\"")
+      expect( @river.parsed_query(true) ).to eq({})
+
+      @river.update(query: ":spring \"river-spec-pool-does-not-exist\" \"#{user.member.handle}\"")
+      expect( @river.parsed_query(true) ).to eq({})
+    end
+
     it 'treats words with special characters as phrases' do
       @river.update(query: "http://google.com duckduckgo o'brian stop&go")
       expected = {
