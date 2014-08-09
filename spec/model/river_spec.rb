@@ -411,7 +411,7 @@ describe Libertree::Model::River do
     end
 
     context 'given two different remote posters' do
-      before do
+      before :all do
         server = Libertree::Model::Server.create(
           FactoryGirl.attributes_for(:server, domain: 'remote' )
         )
@@ -431,11 +431,9 @@ describe Libertree::Model::River do
       end
 
       context 'with display names' do
-        before do
-          @member4.profile.name_display = 'First1 Last1'
-          @member4.profile.save
-          @member5.profile.name_display = 'First2 Last2'
-          @member5.profile.save
+        before :all do
+          @member4.profile.update(name_display: 'First1 Last1')
+          @member5.profile.update(name_display: 'First2 Last2')
         end
 
         it 'matches :from "member display name"' do
