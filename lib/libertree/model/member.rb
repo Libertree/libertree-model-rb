@@ -95,6 +95,16 @@ module Libertree
         end
       end
 
+      # TODO: this is a temporary helper because with_handle no longer includes display name matches.
+      # This will eventually be removed when river :from queries no longer accept display names.
+      def self.with_display_name(name)
+        self.qualify.
+          join(:profiles, :member_id=>:id).
+          where(:profiles__name_display => name).
+          limit(1).
+          first
+      end
+
       def username
         if val = super
           val
