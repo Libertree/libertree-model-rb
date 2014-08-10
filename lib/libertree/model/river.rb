@@ -302,6 +302,7 @@ module Libertree
           words.each_pair {|k,v| words[k].each {|word| word.gsub!(/[\(\)&|!]/, '')}}
 
           # filter by simple terms first to avoid having to check so many posts
+          # TODO: prevent empty arguments to to_tsquery
           posts = posts.where(%{to_tsvector('simple', text)
                                @@ (to_tsquery('simple', ?)
                                && to_tsquery('simple', ?)
