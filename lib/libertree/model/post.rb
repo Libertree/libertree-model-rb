@@ -423,8 +423,9 @@ module Libertree
         posts_found = []
 
         prospective_post_text.scan(
-          %r{(?<=\]\()https?://\S+?(?=\))|(?<=^|\b)https?://\S+(?=\s|$)}
-        ) do |url|
+          %r{(?<=\]\()(https?://\S+?)(?=\))|(?:^|\b)(https?://\S+)(?=\s|$)}
+        ) do |match1, match2|
+          url = match1 || match2
           posts = self.s(
             %{
               SELECT *
