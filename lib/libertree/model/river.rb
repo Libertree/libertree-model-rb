@@ -277,7 +277,13 @@ module Libertree
 
       def refresh_posts( n = 512 )
         # TODO: this is slow despite indices.
-        posts = Post.where{|p| ~Sequel.function(:post_hidden_by_account, p.id, account.id)}
+        #posts = Post.where{|p| ~Sequel.function(:post_hidden_by_account, p.id, account.id)}
+
+        # get posts that are not hidden by account
+        posts = Post.
+          qualify.
+          left_outer_join(:posts_hidden, :posts_hidden__post_id=>:posts__id, :posts_hidden__account_id => account.id).
+          where(:posts_hidden__post_id => nil)
 
         words = self.parsed_query['word']
         if words.values.flatten.count > 0
