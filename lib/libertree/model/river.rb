@@ -41,7 +41,7 @@ module Libertree
           'word-count'   => /(?<sign>[+-])?:word-count ?(?<arg>(?<comp>[<>]) ?(?<num>[0-9]+))/,
           'spring'       => /(?<sign>[+-])?:spring (?<arg>"(?<spring_name>.+?)" "(?<handle>.+?)")/,
           'flag'         => /(?<sign>[+-])?:(?<arg>forest|tree|unread|liked|commented|subscribed)/,
-          'tag'          => /(?<sign>[+-])?#(?<arg>\S+)/,
+          'tag'          => /(?<sign>[+-])?(?<arg>#\S+)/,
           'word'         => /(?<sign>[+-])?(?<arg>\S+)/,
         }
 
@@ -245,7 +245,7 @@ module Libertree
           data.includes?(post)
         when 'via'
           post.via == data
-        when 'phrase', 'word'
+        when 'phrase', 'word', 'tag'
           /(?:^|\b|\s)#{Regexp.escape(data)}(?:\b|\s|$)/i === post.text
         end
       end
