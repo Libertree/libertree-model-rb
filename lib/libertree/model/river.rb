@@ -408,15 +408,15 @@ module Libertree
         end
 
         # get up to n posts
+        # this is faster than using find_all on the set
         count = 0
-        matching = posts.reverse_order(:id).find_all do |post|
-          if count >= n
-            false
-          else
-            if res = self.matches_post?(post, ['word'])
-              count += 1
-            end
-            res
+        matching = []
+        posts.reverse_order(:id).each do |post|
+          break  if count >= n
+
+          if res = self.matches_post?(post, ['flag', 'word', 'phrase', 'tag', 'visibility', 'from', 'via'])
+            count += 1
+            matching << post
           end
         end
 
