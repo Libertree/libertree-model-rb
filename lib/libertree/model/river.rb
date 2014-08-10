@@ -285,6 +285,77 @@ module Libertree
           left_outer_join(:posts_hidden, :posts_hidden__post_id=>:posts__id, :posts_hidden__account_id => account.id).
           where(:posts_hidden__post_id => nil)
 
+        flags = self.parsed_query['flag']
+        if flags
+          excluded = flags[:negations]
+          required = flags[:requirements]
+
+          if excluded.include? 'tree'
+            posts = posts.exclude(:remote_id => nil)
+          elsif required.include? 'tree'
+            posts = posts.where(:remote_id => nil)
+          end
+
+          if excluded.include? 'unread'
+            posts = posts.
+              qualify.
+              join(:posts_read,
+                   :posts_read__post_id => :posts__id,
+                   :posts_read__account_id => account.id)
+          elsif required.include? 'unread'
+            posts = posts.
+              qualify.
+              left_outer_join(:posts_read,
+                              :posts_read__post_id => :posts__id,
+                              :posts_read__account_id => account.id).
+              where(:posts_read__post_id => nil)
+          end
+
+          if excluded.include? 'liked'
+            posts = posts.
+              qualify.
+              join(:post_likes,
+                   :post_likes__post_id => :posts__id,
+                   :post_likes__member_id => account.member.id)
+          elsif required.include? 'liked'
+            posts = posts.
+              qualify.
+              left_outer_join(:post_likes,
+                              :post_likes__post_id => :posts__id,
+                              :post_likes__member_id => account.member.id).
+              where(:post_likes__post_id => nil)
+          end
+
+          if excluded.include? 'commented'
+            posts = posts.
+              exclude(:id => Comment.
+                      select(:post_id).
+                      distinct(:post_id).
+                      where(:member_id => account.member.id))
+          elsif required.include? 'commented'
+            posts = posts.
+              where(:id => Comment.
+                    select(:post_id).
+                    distinct(:post_id).
+                    where(:member_id => account.member.id))
+          end
+
+          if excluded.include? 'subscribed'
+            posts = posts.
+              qualify.
+              join(:post_subscriptions,
+                   :post_subscriptions__post_id => :posts__id,
+                   :post_subscriptions__account_id => account.id)
+          elsif required.include? 'subscribed'
+            posts = posts.
+              qualify.
+              left_outer_join(:post_subscriptions,
+                              :post_subscriptions__post_id => :posts__id,
+                              :post_subscriptions__account_id => account.member.id).
+              where(:post_subscriptions__post_id => nil)
+          end
+        end
+
         words = self.parsed_query['word']
         if words.values.flatten.count > 0
           # strip query characters
