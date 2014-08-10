@@ -356,6 +356,29 @@ module Libertree
           end
         end
 
+        for key in ['phrase', 'tag'] do
+          phrases = self.parsed_query[key]
+          if phrases.values.flatten.count > 0
+            req_patterns = phrases[:requirements].map {|phrase| /(^|\b|\s)#{Regexp.escape(phrase)}(\b|\s|$)/ }
+            neg_patterns = phrases[:negations].map    {|phrase| /(^|\b|\s)#{Regexp.escape(phrase)}(\b|\s|$)/ }
+            reg_patterns = phrases[:regular].map      {|phrase| /(^|\b|\s)#{Regexp.escape(phrase)}(\b|\s|$)/ }
+
+            unless req_patterns.empty?
+              posts = posts.grep(:text, req_patterns, { all_patterns: true, case_insensitive: true })
+            end
+
+            unless neg_patterns.empty?
+              # NOTE: using Regexp.union results in a postgresql error when the phrase includes '#', or '?'
+              pattern = "(#{neg_patterns.map(&:source).join('|')})"
+              posts = posts.exclude(Sequel.ilike(:text, pattern))
+            end
+
+            unless reg_patterns.empty?
+              posts = posts.grep(:text, reg_patterns, { all_patterns: false, case_insensitive: true })
+            end
+          end
+        end
+
         words = self.parsed_query['word']
         if words.values.flatten.count > 0
           # strip query characters
