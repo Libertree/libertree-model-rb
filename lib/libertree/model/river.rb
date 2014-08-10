@@ -62,7 +62,7 @@ module Libertree
 
         scanner = StringScanner.new(full_query)
         until scanner.eos? do
-          scanner.skip(/ +/)
+          scanner.skip(/\s+/)
           patterns.each_pair do |key, pattern|
             if term = scanner.scan(pattern)
               match = term.match(pattern)

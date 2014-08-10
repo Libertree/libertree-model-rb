@@ -229,6 +229,18 @@ describe Libertree::Model::River do
       }
       expect( @river.parsed_query(true) ).to eq(expected)
     end
+
+    it 'does not mind new line or odd whitespace characters' do
+      @river.update(query: "\t  \fhello  \n  bye\r\nciao\rhi   ")
+      expected = {
+        'word' => {
+          :negations    => [],
+          :requirements => [],
+          :regular      => ['hello', 'bye', 'ciao', 'hi']
+        }
+      }
+      expect( @river.parsed_query(true) ).to eq(expected)
+    end
   end
 
   describe '#matches_post?' do
