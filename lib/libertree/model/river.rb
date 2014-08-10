@@ -245,13 +245,13 @@ module Libertree
 
           if excluded.include? 'commented'
             posts = posts.
-              exclude(:id => Comment.
+              exclude(:posts__id => Comment.
                       select(:post_id).
                       distinct(:post_id).
                       where(:member_id => account.member.id))
           elsif required.include? 'commented'
             posts = posts.
-              where(:id => Comment.
+              where(:posts__id => Comment.
                     select(:post_id).
                     distinct(:post_id).
                     where(:member_id => account.member.id))
