@@ -371,6 +371,18 @@ module Libertree
                              words[:regular].join(' | '))
         end
 
+        { 'visibility' => :visibility,
+          'from'       => :member_id,
+          'via'        => :via,
+        }.each_pair do |key, column|
+          set = self.parsed_query[key]
+          if set.values.flatten.count > 0
+            excluded = set[:negations]
+            required = set[:requirements]
+            posts = posts.exclude(column => excluded)  unless excluded.empty?
+            posts = posts.where(column => required)    unless required.empty?
+          end
+        end
 
         # get up to n posts
         count = 0
