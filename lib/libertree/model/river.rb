@@ -213,7 +213,7 @@ module Libertree
           when 'forest'
             true  # Every post is a post in the forest.  :forest is sort of a no-op term
           when 'tree'
-            post.member.account
+            post.local?
           when 'unread'
             ! post.read_by?(self.account)
           when 'liked'
