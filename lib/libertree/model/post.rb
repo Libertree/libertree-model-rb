@@ -442,7 +442,7 @@ module Libertree
             Regexp.escape(url),
             Regexp.escape(url)
           )
-          if posts.any?
+          if posts.count > 0 && posts.count < 4
             posts_found << posts[0]
           end
         end

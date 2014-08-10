@@ -245,6 +245,10 @@ describe Libertree::Model::Post do
         new_post "lorem ipsum [lorem ipsum](http://vwx.biz/vwx) lorem ipsum"
         new_post "lorem ipsum\nlorem ipsum https://qed.net?text=%22To+be+or+not+to+be%3F%22%2C+that+is+the+question.%22\nlorem ipsum"
         new_post "aoeuhttp://yza.com/yza lorem ipsum"
+        new_post "1 http://repeatedurl.com/abc"
+        new_post "2 http://repeatedurl.com/abc"
+        new_post "3 http://repeatedurl.com/abc"
+        new_post "4 http://repeatedurl.com/abc"
       end
 
       it 'correctly reports the presence or absence of Posts which have those URLs' do
@@ -306,6 +310,8 @@ describe Libertree::Model::Post do
         expect(Libertree::Model::Post.urls_already_posted?('aoeu http://yza.com/yza')).to be_nil
         expect(Libertree::Model::Post.urls_already_posted?('http://yza.com/yza aoeu')).to be_nil
         expect(Libertree::Model::Post.urls_already_posted?('aoeu http://yza.com/yza aoeu')).to be_nil
+
+        expect(Libertree::Model::Post.urls_already_posted?('aoeu http://repeatedurl.com/abc aoeu')).to be_nil
       end
     end
   end
