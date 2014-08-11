@@ -23,6 +23,14 @@ module Libertree
         )
       end
 
+      def member_ids
+        Libertree::DB.dbh[:contact_lists_members].
+          select(:member_id).
+          where(:contact_list_id => self.id).
+          all.
+          flat_map(&:values)
+      end
+
       def members=(arg)
         DB.dbh[ "DELETE FROM contact_lists_members WHERE contact_list_id = ?", self.id ].get
         Array(arg).each do |member_id_s|
