@@ -32,9 +32,11 @@ module Libertree
       end
 
       def members=(arg)
-        DB.dbh[ "DELETE FROM contact_lists_members WHERE contact_list_id = ?", self.id ].get
-        Array(arg).each do |member_id_s|
-          DB.dbh[ "INSERT INTO contact_lists_members ( contact_list_id, member_id ) VALUES ( ?, ? )", self.id, member_id_s.to_i ].get
+        DB.dbh.transaction do
+          DB.dbh[ "DELETE FROM contact_lists_members WHERE contact_list_id = ?", self.id ].get
+          Array(arg).each do |member_id_s|
+            DB.dbh[ "INSERT INTO contact_lists_members ( contact_list_id, member_id ) VALUES ( ?, ? )", self.id, member_id_s.to_i ].get
+          end
         end
       end
 

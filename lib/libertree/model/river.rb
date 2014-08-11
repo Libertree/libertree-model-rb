@@ -340,9 +340,11 @@ module Libertree
         end
 
         # delete late to minimise interruption
-        DB.dbh[ "DELETE FROM river_posts WHERE river_id = ?", self.id ].get
-        if matching.any?
-          DB.dbh[ "INSERT INTO river_posts SELECT ?, id FROM posts WHERE id IN ?", self.id, matching.map(&:id)].get
+        DB.dbh.transaction do
+          DB.dbh[ "DELETE FROM river_posts WHERE river_id = ?", self.id ].get
+          if matching.any?
+            DB.dbh[ "INSERT INTO river_posts SELECT ?, id FROM posts WHERE id IN ?", self.id, matching.map(&:id)].get
+          end
         end
       end
 
