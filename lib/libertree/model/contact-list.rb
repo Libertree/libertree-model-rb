@@ -43,6 +43,8 @@ module Libertree
       end
 
       def <<(member)
+        # refuse to add anything that's not a Member
+        return  unless member.is_a? Member
         DB.dbh[
           %{
             INSERT INTO contact_lists_members (
