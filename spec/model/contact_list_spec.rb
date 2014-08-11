@@ -40,4 +40,13 @@ describe Libertree::Model::ContactList do
       expect( @list.member_ids ).to match_array @list.members.map(&:id)
     end
   end
+
+  describe '#<<' do
+    it 'will not add the same member more than once' do
+      a = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
+      member1 = a.member
+      5.times { @list << member1 }
+      expect( @list.member_ids ).to match_array [member1.id]
+    end
+  end
 end

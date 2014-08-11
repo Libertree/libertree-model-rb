@@ -45,27 +45,13 @@ module Libertree
       def <<(member)
         # refuse to add anything that's not a Member
         return  unless member.is_a? Member
-        DB.dbh[
-          %{
-            INSERT INTO contact_lists_members (
-                contact_list_id
-              , member_id
-            ) SELECT
-              ?, ?
-            WHERE
-              NOT EXISTS (
-                SELECT 1
-                FROM contact_lists_members
-                WHERE
-                  contact_list_id = ?
-                  AND member_id = ?
-              )
-          },
-          self.id,
-          member.id,
-          self.id,
-          member.id
-        ].get
+
+        Libertree::DB.dbh.transaction do
+          unless self.member_ids.include?(member.id)
+            Libertree::DB.dbh[:contact_lists_members].
+              insert(contact_list_id: self.id, member_id: member.id)
+          end
+        end
       end
     end
   end
