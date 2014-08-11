@@ -160,17 +160,31 @@ describe Libertree::Model::River do
     end
 
     it 'looks up a contact list to verify :contact-list query' do
+      a = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
+      member1 = a.member
+      b = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
+      member2 = b.member
       list = Libertree::Model::ContactList.create( account_id: @river.account.id,
-                                                   name: "river-spec-list-name" )
-      @river.update(query: ':contact-list "river-spec-list-name"')
+                                                   name: "river-spec-list-name1" )
+      list << member1
+      list << member2
+
+      @river.update(query: ':contact-list "river-spec-list-name1"')
       expected = {
         'contact-list' => {
           :negations    => [],
           :requirements => [],
-          :regular      => [list]
+          :regular      => [list.member_ids]
         }
       }
       expect( @river.parsed_query(true) ).to eq(expected)
+    end
+
+    it 'ignores empty contact list' do
+      list = Libertree::Model::ContactList.create( account_id: @river.account.id,
+                                                   name: "river-spec-list-name2" )
+      @river.update(query: ':contact-list "river-spec-list-name2"')
+      expect( @river.parsed_query(true) ).to eq({})
     end
 
     it 'looks up a spring to verify :spring query' do

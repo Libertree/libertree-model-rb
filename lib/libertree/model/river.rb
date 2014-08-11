@@ -90,12 +90,14 @@ module Libertree
                   res[key][group] << member.id
                 end
               when 'river'
+                # TODO: this is very slow.  Try to merge the target river's parsed query with this query.
                 if river = River[label: match[:arg]]
                   res[key][group] << river  if river.id != self.id
                 end
               when 'contact-list'
                 if list = ContactList[ account_id: self.account.id, name: match[:arg] ]
-                  res[key][group] << list
+                  ids = list.member_ids
+                  res[key][group] << ids  unless ids.empty?
                 end
               when 'spring'
                 # TODO: eventually remove with_display_name check
@@ -141,8 +143,7 @@ module Libertree
             self.account.subscribed_to? post
           end
         when 'contact-list'
-          # TODO: slow
-          data.members.include? post.member
+          data.include? post.member_id
         when 'from'
           post.member_id == data
         when 'river'
