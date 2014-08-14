@@ -5,6 +5,12 @@ GIT
     linecache19 (0.5.12)
       ruby_core_source (>= 0.1.4)
 
+GIT
+  remote: git://github.com/rekado/rpeg-markdown.git
+  revision: 15128cd9d8270cc61279ffdc478b52f89a63a220
+  specs:
+    rpeg-markdown (1.4.21)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -64,6 +70,7 @@ DEPENDENCIES
   net-ldap
   nokogiri (~> 1.5)
   pg
+  rpeg-markdown!
   rspec
   ruby-debug-base19x (~> 0.11.30.pre4)
   ruby-debug19
