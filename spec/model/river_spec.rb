@@ -139,16 +139,16 @@ describe Libertree::Model::River do
       expect( @river.parsed_query(true) ).to eq({})
     end
 
-    it 'looks up a river to verify :river query' do
-      river = Libertree::Model::River.create( query: 'whatever',
+    it 'merges the parsed query of a referenced river into the current query' do
+      river = Libertree::Model::River.create( query: 'some whatever',
                                               label: 'river-spec-included-river',
                                               account_id: @account.id )
-      @river.update(query: ":river \"#{river.label}\"")
+      @river.update(query: "some terms :river \"#{river.label}\"")
       expected = {
-        'river' => {
+        'word' => {
           :negations    => [],
           :requirements => [],
-          :regular      => [river]
+          :regular      => ['some', 'terms', 'whatever']
         }
       }
       expect( @river.parsed_query(true) ).to eq(expected)

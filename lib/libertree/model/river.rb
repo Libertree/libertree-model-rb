@@ -90,9 +90,37 @@ module Libertree
                   res[key][group] << member.id
                 end
               when 'river'
-                # TODO: this is very slow.  Try to merge the target river's parsed query with this query.
                 if river = River[label: match[:arg]]
-                  res[key][group] << river  if river.id != self.id
+                  if river.id != self.id
+                    # merge parsed queries
+                    res.merge!(river.parsed_query) do |key, oldval, newval|
+                      case group
+                      when :regular
+                        # a post may match the river
+                        {
+                          :negations    => oldval[:negations]    + newval[:negations],
+                          :regular      => oldval[:regular]      + newval[:regular],
+                          :requirements => oldval[:requirements] + newval[:requirements]
+                        }
+                      when :requirements
+                        # a post must match the river
+                        {
+                          :negations    => oldval[:negations]    + newval[:negations],
+                          :regular      => oldval[:regular],
+                          :requirements => oldval[:requirements] + newval[:requirements] + newval[:regular]
+                        }
+                      when :negations
+                        # a post matching the river must be excluded
+                        {
+                          :negations    => oldval[:negations] + newval[:regular] + newval[:requirements],
+                          :regular      => oldval[:regular]   + newval[:negations],
+                          :requirements => oldval[:requirements]
+                        }
+                      end.each_pair do |key, val|
+                        val.uniq!
+                      end
+                    end
+                  end
                 end
               when 'contact-list'
                 if list = ContactList[ account_id: self.account.id, name: match[:arg] ]
