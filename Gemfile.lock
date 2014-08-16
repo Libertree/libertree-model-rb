@@ -6,10 +6,10 @@ GIT
       ruby_core_source (>= 0.1.4)
 
 GIT
-  remote: git://github.com/rekado/rpeg-markdown.git
-  revision: 15128cd9d8270cc61279ffdc478b52f89a63a220
+  remote: git://github.com/rekado/parkdown.git
+  revision: c264d0414bff40c1a8a639cc66ae59b1ed9909de
   specs:
-    rpeg-markdown (1.4.21)
+    parkdown (1.4.22)
 
 GEM
   remote: http://rubygems.org/
@@ -69,8 +69,8 @@ DEPENDENCIES
   linecache19!
   net-ldap
   nokogiri (~> 1.5)
+  parkdown!
   pg
-  rpeg-markdown!
   rspec
   ruby-debug-base19x (~> 0.11.30.pre4)
   ruby-debug19
