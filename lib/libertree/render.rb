@@ -1,5 +1,6 @@
 # encoding: utf-8
 require 'nokogiri'
+require 'markdown'
 
 module Libertree
   module Render
