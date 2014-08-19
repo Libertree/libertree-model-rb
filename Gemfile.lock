@@ -7,9 +7,9 @@ GIT
 
 GIT
   remote: git://github.com/rekado/parkdown.git
-  revision: c264d0414bff40c1a8a639cc66ae59b1ed9909de
+  revision: d860aadcc8bda9b00eefbe32a7051bcd1a2695d1
   specs:
-    parkdown (1.4.22)
+    parkdown (1.4.23)
 
 GEM
   remote: http://rubygems.org/
