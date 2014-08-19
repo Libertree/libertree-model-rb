@@ -156,35 +156,22 @@ module Libertree
       end
 
       def mentioned_accounts
-        # TODO: work on the parsed HTML representation instead?
+        accounts = Set.new
 
         # find all JIDs first
         # TODO: username matching (left here for compatibility reasons) is deprecated
-        pattern_jid = %r{(?:\W|^)@(\w+@\w+(?:\.\w+)+)}
-        pattern_old = %r{(?:\W|^)@(\w+)}
-        pattern =  Regexp.union(pattern_jid, pattern_old)
-
-        author_handle = self.member.handle
-        author_name = self.member.username
-
-        handles = []
-        usernames = []
-
-        self.text.scan(pattern) do |handle, username|
-          if handle && handle != author_handle
-            handles << handle
-          elsif username && username != author_name
-            usernames << username
+        self.text_as_html.xpath('.//span[@rel="username"]').each do |n|
+          handle = n.content[1..-1].downcase
+          if account = Account[ username: handle ]
+            accounts << account
+          elsif member = Member.with_handle(handle)
+            accounts << member.account
           end
         end
 
-        res = handles.uniq.map do |handle|
-          member = Libertree::Model::Member.with_handle(handle)
-          member.account  if member
-        end.compact
-
-        res += Libertree::Model::Account.where(username: usernames.uniq).all
-        res
+        # remove post author from result set
+        accounts.delete(self.member.account)
+        accounts.to_a
       end
 
       def before_destroy

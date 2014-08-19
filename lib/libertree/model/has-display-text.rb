@@ -1,3 +1,5 @@
+require 'libertree/render'
+
 module Libertree
   module Model
     # Provides a "glimpse" instance method to objects that have a "text" field.
@@ -14,6 +16,10 @@ module Libertree
         else
           t[0...length] + '...'
         end
+      end
+
+      def text_as_html
+        Render.to_html_nodeset(self.text)
       end
     end
   end
