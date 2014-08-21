@@ -140,6 +140,7 @@ describe Libertree::Model::River do
     end
 
     it 'merges the parsed query of a referenced river into the current query' do
+      pending 'this requires more rigorous logic processing'
       river = Libertree::Model::River.create( query: 'some whatever',
                                               label: 'river-spec-included-river',
                                               account_id: @account.id )
