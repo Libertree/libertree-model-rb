@@ -363,7 +363,7 @@ module Libertree
         end
 
         get_comments = lambda do
-          comments = post.comments
+          comments = Comment.on_post(post)
           comment_likes = CommentLike.where('comment_id IN ?', comments.map(&:id)).reduce({}) do |hash, like|
             if hash[like.comment_id]
               hash[like.comment_id] << like
