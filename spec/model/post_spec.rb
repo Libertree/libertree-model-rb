@@ -233,6 +233,7 @@ describe Libertree::Model::Post do
         Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
       end
 
+      @member = members.first
       @post = Libertree::Model::Post.create(FactoryGirl.attributes_for( :post, member_id: members.sample.id, text: 'post' ))
       5.times do |i|
         comment = Libertree::Model::Comment.create(FactoryGirl.attributes_for(:comment, member_id: members.sample.id, post_id: @post.id))
@@ -257,6 +258,31 @@ describe Libertree::Model::Post do
       expect( p.comments.count ).to eq(5)
       expect( p.comments.flat_map(&:likes).count ).to eq(20)
       expect( p.likes.count ).to eq(3)
+    end
+
+    it 'defines a comments method that accepts filter arguments' do
+      p = Libertree::Model::Post.get_full(@post.id)
+
+      expect( Libertree::Model::Comment ).not_to receive(:on_post)
+      ids = p.comments.map(&:id).sort
+
+      expect( p.comments(:from_id => ids.last).count ).to eq(1)
+      expect( p.comments(:from_id => ids.last).map(&:id).first ).to eq(ids.last)
+
+      expect( p.comments(:to_id => ids.last).count ).to eq(4)
+      expect( p.comments(:to_id => ids.last).map(&:id) ).to eq(ids.take(4))
+
+      expect( p.comments(:limit => 2).count ).to eq(2)
+      expect( p.comments(:limit => 2).map(&:id) ).to eq(ids.last(2))
+    end
+
+    it 'defines a comments method that fetches fresh comments when passed :refresh_cache' do
+      p = Libertree::Model::Post.get_full(@post.id)
+      expect( p.comments.count ).to eq(5)
+      comment = Libertree::Model::Comment.create(FactoryGirl.attributes_for(:comment, member_id: @member.id, post_id: p.id))
+      expect( p.comments.count ).to eq(5)
+      expect( p.comments(:refresh_cache => true).count ).to eq(6)
+      expect( p.comments.count ).to eq(6)
     end
   end
 
