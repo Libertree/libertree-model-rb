@@ -227,6 +227,39 @@ describe Libertree::Model::Post do
     end
   end
 
+  describe '#get_full' do
+    before do
+      members = (1..5).map do
+        Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
+      end
+
+      @post = Libertree::Model::Post.create(FactoryGirl.attributes_for( :post, member_id: members.sample.id, text: 'post' ))
+      5.times do |i|
+        comment = Libertree::Model::Comment.create(FactoryGirl.attributes_for(:comment, member_id: members.sample.id, post_id: @post.id))
+        4.times do |i|
+          Libertree::Model::CommentLike.create(FactoryGirl.attributes_for(:comment_like, member_id: members.sample.id, comment_id: comment.id))
+        end
+      end
+      3.times do
+        Libertree::Model::PostLike.create(FactoryGirl.attributes_for(:comment_like, member_id: members.sample.id, post_id: @post.id))
+      end
+    end
+
+    it 'gets the post with all comments, likes, and members' do
+      p = Libertree::Model::Post.get_full(@post.id)
+
+      # expect none of the following methods to hit the database
+      expect( Libertree::Model::Comment     ).not_to receive(:on_post)
+      expect( Libertree::Model::CommentLike ).not_to receive(:where)
+      expect( Libertree::Model::PostLike    ).not_to receive(:where)
+
+      expect( p.id ).to eq(@post.id)
+      expect( p.comments.count ).to eq(5)
+      expect( p.comments.flat_map(&:likes).count ).to eq(20)
+      expect( p.likes.count ).to eq(3)
+    end
+  end
+
   describe '.urls_already_posted?' do
     context 'given some posts with URLs' do
       before do
