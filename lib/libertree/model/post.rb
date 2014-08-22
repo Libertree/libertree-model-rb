@@ -356,40 +356,48 @@ module Libertree
         end
 
         post_likes = post.likes
-        comments = post.comments
-
-        comment_likes = CommentLike.where('comment_id IN ?', comments.map(&:id)).reduce({}) do |hash, like|
-          if hash[like.comment_id]
-            hash[like.comment_id] << like
-          else
-            hash[like.comment_id] = [like]
-          end
-          hash
-        end
 
         like_proc = proc do |like|
           like.define_singleton_method(:member) { members[like.member_id] }
           like
         end
 
-        comments = comments.map do |comment|
-          likes = if comment_likes[comment.id]
-                    comment_likes[comment.id].map{|l| like_proc.call(l)}
-                  else
-                    []
-                  end
+        get_comments = lambda do
+          comments = post.comments
+          comment_likes = CommentLike.where('comment_id IN ?', comments.map(&:id)).reduce({}) do |hash, like|
+            if hash[like.comment_id]
+              hash[like.comment_id] << like
+            else
+              hash[like.comment_id] = [like]
+            end
+            hash
+          end
 
-          comment.define_singleton_method(:member) { members[comment.member_id] }
-          comment.define_singleton_method(:likes) { likes }
-          comment.define_singleton_method(:post) { post }
+          comments.map do |comment|
+            likes = if comment_likes[comment.id]
+                      comment_likes[comment.id].map{|l| like_proc.call(l)}
+                    else
+                      []
+                    end
 
-          comment
+            comment.define_singleton_method(:member) { members[comment.member_id] }
+            comment.define_singleton_method(:likes)  { likes }
+            comment.define_singleton_method(:post)   { post }
+
+            comment
+          end
         end
+
+        comments = get_comments.call
 
         # enhance post object with expanded associations
         post.define_singleton_method(:member) { members[post.member_id] }
         post.define_singleton_method(:likes)  { post_likes.map{|l| like_proc.call(l)} }
         post.define_singleton_method(:comments) {|opts={}|
+          if opts[:refresh_cache]
+            comments = get_comments.call
+          end
+
           res = comments
           if opts
             res = res.find_all {|c| c.id >= opts[:from_id].to_i}  if opts[:from_id]
