@@ -254,7 +254,7 @@ module Libertree
 
       def extract_hashtags
         self.text_as_html.xpath('.//span[@rel="hashtag"]').map do |n|
-          n.content[1..-1] =~ /([\p{Word}\p{Pd}]+)/i
+          n.content[1..-1] =~ /([\p{Word}_-]+)/i
           $1.downcase  if $1
         end
       end
