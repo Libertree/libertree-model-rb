@@ -3,7 +3,7 @@ require 'yaml'
 
 module Libertree
   module DB
-    LAST_MIGRATION = "2014-06-15-0510-pubsub.sql"
+    LAST_MIGRATION = "2014-08-28-hashtags-array.sql"
 
     def self.config
       @config

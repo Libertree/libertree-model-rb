@@ -10,6 +10,7 @@ module Libertree
 
       def after_create
         super
+        self.update(hashtags: self.extract_hashtags)
         if self.local? && self.distribute?
           Libertree::Model::Job.create_for_forests(
             {
@@ -25,6 +26,7 @@ module Libertree
 
       def after_update
         super
+        self.update(hashtags: self.extract_hashtags)
         has_distributable_difference = (
           self.previous_changes.include?(:text) ||
           self.previous_changes.include?(:visibility)

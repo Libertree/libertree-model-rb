@@ -5,6 +5,8 @@ Sequel::Model.plugin :compat
 Sequel::Model.unrestrict_primary_key
 Sequel::Model.plugin :json_serializer
 
+Libertree::DB.dbh.extension :pg_array
+
 require_relative 'model/is-remote-or-local'
 require_relative 'model/has-searchable-text'
 require_relative 'model/has-display-text'
