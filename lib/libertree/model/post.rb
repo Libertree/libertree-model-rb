@@ -250,6 +250,13 @@ module Libertree
         )
       end
 
+      def extract_hashtags
+        self.text_as_html.xpath('.//span[@rel="hashtag"]').map do |n|
+          n.content[1..-1] =~ /([\p{Word}\p{Pd}]+)/i
+          $1.downcase  if $1
+        end
+      end
+
       def self.with_tag( opts = {} )
         # TODO:
         # hashtags should have their own column to improve performance and to
