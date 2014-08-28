@@ -8,9 +8,13 @@ module Libertree
       extend HasSearchableText
       include HasDisplayText
 
+      def before_create
+        self.hashtags = self.extract_hashtags
+        super
+      end
+
       def after_create
         super
-        self.update(hashtags: self.extract_hashtags)
         if self.local? && self.distribute?
           Libertree::Model::Job.create_for_forests(
             {
@@ -24,9 +28,13 @@ module Libertree
         self.notify_mentioned
       end
 
+      def before_update
+        self.hashtags = self.extract_hashtags
+        super
+      end
+
       def after_update
         super
-        self.update(hashtags: self.extract_hashtags)
         has_distributable_difference = (
           self.previous_changes.include?(:text) ||
           self.previous_changes.include?(:visibility)
