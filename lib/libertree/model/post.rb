@@ -270,14 +270,11 @@ module Libertree
       end
 
       def self.with_tag( opts = {} )
-        # TODO:
-        # hashtags should have their own column to improve performance and to
-        # exclude posts that contain strings in verbatim sections that only
-        # look like hashtags
-
+        return []  if opts[:tag].nil? || opts[:tag].empty?
+        tags = Sequel.pg_array(Array(opts[:tag]))
         time = Time.at( opts.fetch(:time, Time.now.to_f) ).strftime("%Y-%m-%d %H:%M:%S.%6N%z")
         Post.s(%{SELECT * FROM tagged_posts(?, ?, ?, ?, ?)},
-               opts[:tag],
+               tags,
                time,
                opts[:newer],
                opts[:order_by] == :comment,
