@@ -41,7 +41,7 @@ module Libertree
           'word-count'   => /(?<sign>[+-])?:word-count ?(?<arg>(?<comp>[<>]) ?(?<num>[0-9]+))/,
           'spring'       => /(?<sign>[+-])?:spring (?<arg>"(?<spring_name>.+?)" "(?<handle>.+?)")/,
           'flag'         => /(?<sign>[+-])?:(?<arg>forest|tree|unread|liked|commented|subscribed)/,
-          'tag'          => /(?<sign>[+-])?(?<arg>#\S+)/,
+          'tag'          => /(?<sign>[+-])?#(?<arg>\S+)/,
           'word'         => /(?<sign>[+-])?(?<arg>\S+)/,
         }
 
@@ -162,7 +162,9 @@ module Libertree
           data.includes?(post)
         when 'via'
           post.via == data
-        when 'phrase', 'word', 'tag'
+        when 'tag'
+          post.hashtags.include? data
+        when 'phrase', 'word'
           /(?:^|\b|\s)#{Regexp.escape(data)}(?:\b|\s|$)/i === post.text
         end
       end
@@ -273,26 +275,37 @@ module Libertree
           end
         end
 
-        for key in ['phrase', 'tag'] do
-          phrases = self.parsed_query[key]
-          if phrases.values.flatten.count > 0
-            req_patterns = phrases[:requirements].map {|phrase| /(^|\b|\s)#{Regexp.escape(phrase)}(\b|\s|$)/ }
-            neg_patterns = phrases[:negations].map    {|phrase| /(^|\b|\s)#{Regexp.escape(phrase)}(\b|\s|$)/ }
-            reg_patterns = phrases[:regular].map      {|phrase| /(^|\b|\s)#{Regexp.escape(phrase)}(\b|\s|$)/ }
+        tags = self.parsed_query['tag']
+        if tags.values.flatten.count > 0
+          # Careful!  Don't trust user input!
+          # remove any tag that includes array braces
+          excluded = tags[:negations].delete_if    {|t| t =~ /[{}]/ }
+          required = tags[:requirements].delete_if {|t| t =~ /[{}]/ }
+          regular  = tags[:regular].delete_if      {|t| t =~ /[{}]/ }
 
-            unless req_patterns.empty?
-              posts = posts.grep(:text, req_patterns, { all_patterns: true, case_insensitive: true })
-            end
+          posts = posts.exclude(Sequel.pg_array_op(:hashtags).contains("{#{excluded.join(',')}}"))  unless excluded.empty?
+          posts = posts.where  (Sequel.pg_array_op(:hashtags).contains("{#{required.join(',')}}"))  unless required.empty?
+          posts = posts.where  (Sequel.pg_array_op(:hashtags).overlaps("{#{regular.join(',')}}" ))  unless regular.empty?
+        end
 
-            unless neg_patterns.empty?
-              # NOTE: using Regexp.union results in a postgresql error when the phrase includes '#', or '?'
-              pattern = "(#{neg_patterns.map(&:source).join('|')})"
-              posts = posts.exclude(Sequel.ilike(:text, pattern))
-            end
+        phrases = self.parsed_query['phrase']
+        if phrases.values.flatten.count > 0
+          req_patterns = phrases[:requirements].map {|phrase| /(^|\b|\s)#{Regexp.escape(phrase)}(\b|\s|$)/ }
+          neg_patterns = phrases[:negations].map    {|phrase| /(^|\b|\s)#{Regexp.escape(phrase)}(\b|\s|$)/ }
+          reg_patterns = phrases[:regular].map      {|phrase| /(^|\b|\s)#{Regexp.escape(phrase)}(\b|\s|$)/ }
 
-            unless reg_patterns.empty?
-              posts = posts.grep(:text, reg_patterns, { all_patterns: false, case_insensitive: true })
-            end
+          unless req_patterns.empty?
+            posts = posts.grep(:text, req_patterns, { all_patterns: true, case_insensitive: true })
+          end
+
+          unless neg_patterns.empty?
+            # NOTE: using Regexp.union results in a postgresql error when the phrase includes '#', or '?'
+            pattern = "(#{neg_patterns.map(&:source).join('|')})"
+            posts = posts.exclude(Sequel.ilike(:text, pattern))
+          end
+
+          unless reg_patterns.empty?
+            posts = posts.grep(:text, reg_patterns, { all_patterns: false, case_insensitive: true })
           end
         end
 
