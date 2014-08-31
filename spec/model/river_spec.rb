@@ -113,9 +113,9 @@ describe Libertree::Model::River do
       @river.update(query: '+#awesome -#lame #whatever')
       expected = {
         'tag' => {
-          :negations    => ['#lame'],
-          :requirements => ['#awesome'],
-          :regular      => ['#whatever']
+          :negations    => ['lame'],
+          :requirements => ['awesome'],
+          :regular      => ['whatever']
         }
       }
       expect( @river.parsed_query(true) ).to eq(expected)
