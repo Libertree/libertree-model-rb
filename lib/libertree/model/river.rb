@@ -316,7 +316,7 @@ module Libertree
 
           # filter by simple terms first to avoid having to check so many posts
           # TODO: prevent empty arguments to to_tsquery
-          posts = posts.where(%{to_tsvector('simple', text)
+          posts = posts.where(%{(to_tsvector('simple', text) || to_tsvector('english', text))
                                @@ (to_tsquery('simple', ?)
                                && to_tsquery('simple', ?)
                                && to_tsquery('simple', ?))},
