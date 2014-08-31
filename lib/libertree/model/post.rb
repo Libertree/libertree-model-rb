@@ -271,7 +271,7 @@ module Libertree
 
       def self.with_tag( opts = {} )
         return []  if opts[:tag].nil? || opts[:tag].empty?
-        tags = Sequel.pg_array(Array(opts[:tag]))
+        tags = Sequel.pg_array(Array(opts[:tag]).map(&:downcase))
         time = Time.at( opts.fetch(:time, Time.now.to_f) ).strftime("%Y-%m-%d %H:%M:%S.%6N%z")
         Post.s(%{SELECT * FROM tagged_posts(?, ?, ?, ?, ?)},
                tags,
