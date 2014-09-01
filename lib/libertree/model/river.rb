@@ -232,6 +232,27 @@ module Libertree
               posts = Post.subscribed_to_by(account, posts)
             end
           end
+
+          sets = flags[:regular].map do |flag|
+            case flag
+            when 'tree'
+              posts.where(:remote_id => nil)
+            when 'unread'
+              Post.unread_by(account, posts)
+            when 'liked'
+              Post.liked_by(account.member, posts)
+            when 'commented'
+              Post.commented_on_by(account.member, posts)
+            when 'subscribed'
+              Post.subscribed_to_by(account, posts)
+            end
+          end.compact
+
+          unless sets.empty?
+            posts = sets.reduce do |res, set|
+              res.union(set)
+            end
+          end
         end
 
         tags = self.parsed_query['tag']
