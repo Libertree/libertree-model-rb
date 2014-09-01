@@ -309,6 +309,13 @@ module Libertree
         DB.dbh[ "SELECT post_hidden_by_account(?, ?)", self.id, account.id ].single_value
       end
 
+      def self.not_hidden_by(account)
+        self.
+          qualify.
+          left_outer_join(:posts_hidden, :posts_hidden__post_id=>:posts__id, :posts_hidden__account_id => account.id).
+          where(:posts_hidden__post_id => nil)
+      end
+
       def collected_by?(account)
         DB.dbh[ "SELECT account_collected_post(?, ?)", account.id, self.id ].single_value
       end

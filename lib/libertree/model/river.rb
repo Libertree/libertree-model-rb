@@ -199,10 +199,7 @@ module Libertree
         #posts = Post.where{|p| ~Sequel.function(:post_hidden_by_account, p.id, account.id)}
 
         # get posts that are not hidden by account
-        posts = Post.
-          qualify.
-          left_outer_join(:posts_hidden, :posts_hidden__post_id=>:posts__id, :posts_hidden__account_id => account.id).
-          where(:posts_hidden__post_id => nil)
+        posts = Post.not_hidden_by(account)
 
         flags = self.parsed_query['flag']
         if flags
