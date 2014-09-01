@@ -309,11 +309,77 @@ module Libertree
         DB.dbh[ "SELECT post_hidden_by_account(?, ?)", self.id, account.id ].single_value
       end
 
-      def self.not_hidden_by(account)
-        self.
+      def self.not_hidden_by(account, posts=self)
+        posts.
           qualify.
           left_outer_join(:posts_hidden, :posts_hidden__post_id=>:posts__id, :posts_hidden__account_id => account.id).
           where(:posts_hidden__post_id => nil)
+      end
+
+      def self.read_by(account, posts=self)
+        posts.
+          qualify.
+          join(:posts_read,
+               :posts_read__post_id => :posts__id,
+               :posts_read__account_id => account.id)
+      end
+
+      def self.unread_by(account, posts=self)
+        posts.
+          qualify.
+          left_outer_join(:posts_read,
+                          :posts_read__post_id => :posts__id,
+                          :posts_read__account_id => account.id).
+          where(:posts_read__post_id => nil)
+      end
+
+      def self.liked_by(member, posts=self)
+        posts.
+          qualify.
+          join(:post_likes,
+               :post_likes__post_id => :posts__id,
+               :post_likes__member_id => member.id)
+      end
+
+      def self.without_liked_by(member, posts=self)
+        posts.
+          qualify.
+          join(:post_likes,
+               :post_likes__post_id => :posts__id,
+               :post_likes__member_id => member.id)
+      end
+
+      def self.commented_on_by(member, posts=self)
+        posts.
+          where(:posts__id => Comment.
+                select(:post_id).
+                distinct(:post_id).
+                where(:member_id => member.id))
+      end
+
+      def self.without_commented_on_by(member, posts=self)
+        posts.
+          exclude(:posts__id => Comment.
+                  select(:post_id).
+                  distinct(:post_id).
+                  where(:member_id => member.id))
+      end
+
+      def self.subscribed_to_by(account, posts=self)
+        posts.
+          qualify.
+          join(:post_subscriptions,
+               :post_subscriptions__post_id => :posts__id,
+               :post_subscriptions__account_id => account.id)
+      end
+
+      def self.without_subscribed_to_by(account, posts=self)
+        posts.
+          qualify.
+          left_outer_join(:post_subscriptions,
+                          :post_subscriptions__post_id => :posts__id,
+                          :post_subscriptions__account_id => account.id).
+          where(:post_subscriptions__post_id => nil)
       end
 
       def collected_by?(account)

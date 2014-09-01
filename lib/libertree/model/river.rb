@@ -213,62 +213,27 @@ module Libertree
           end
 
           if excluded.include? 'unread'
-            posts = posts.
-              qualify.
-              join(:posts_read,
-                   :posts_read__post_id => :posts__id,
-                   :posts_read__account_id => account.id)
+            posts = Post.read_by(account, posts)
           elsif required.include? 'unread'
-            posts = posts.
-              qualify.
-              left_outer_join(:posts_read,
-                              :posts_read__post_id => :posts__id,
-                              :posts_read__account_id => account.id).
-              where(:posts_read__post_id => nil)
+            posts = Post.unread_by(account, posts)
           end
 
           if excluded.include? 'liked'
-            posts = posts.
-              qualify.
-              left_outer_join(:post_likes,
-                              :post_likes__post_id => :posts__id,
-                              :post_likes__member_id => account.member.id).
-              where(:post_likes__post_id => nil)
+            posts = Post.without_liked_by(account.member, posts)
           elsif required.include? 'liked'
-            posts = posts.
-              qualify.
-              join(:post_likes,
-                   :post_likes__post_id => :posts__id,
-                   :post_likes__member_id => account.member.id)
+            posts = Post.liked_by(account.member, posts)
           end
 
           if excluded.include? 'commented'
-            posts = posts.
-              exclude(:posts__id => Comment.
-                      select(:post_id).
-                      distinct(:post_id).
-                      where(:member_id => account.member.id))
+            posts = Post.without_commented_on_by(account.member, posts)
           elsif required.include? 'commented'
-            posts = posts.
-              where(:posts__id => Comment.
-                    select(:post_id).
-                    distinct(:post_id).
-                    where(:member_id => account.member.id))
+            posts = Post.commented_on_by(account.member, posts)
           end
 
           if excluded.include? 'subscribed'
-            posts = posts.
-              qualify.
-              left_outer_join(:post_subscriptions,
-                              :post_subscriptions__post_id => :posts__id,
-                              :post_subscriptions__account_id => account.member.id).
-              where(:post_subscriptions__post_id => nil)
+            posts = Post.without_subscribed_to_by(account, posts)
           elsif required.include? 'subscribed'
-            posts = posts.
-              qualify.
-              join(:post_subscriptions,
-                   :post_subscriptions__post_id => :posts__id,
-                   :post_subscriptions__account_id => account.id)
+            posts = Post.subscribed_to_by(account, posts)
           end
         end
 
