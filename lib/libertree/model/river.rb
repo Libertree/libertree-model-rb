@@ -259,16 +259,16 @@ module Libertree
           if excluded.include? 'subscribed'
             posts = posts.
               qualify.
-              join(:post_subscriptions,
-                   :post_subscriptions__post_id => :posts__id,
-                   :post_subscriptions__account_id => account.id)
-          elsif required.include? 'subscribed'
-            posts = posts.
-              qualify.
               left_outer_join(:post_subscriptions,
                               :post_subscriptions__post_id => :posts__id,
                               :post_subscriptions__account_id => account.member.id).
               where(:post_subscriptions__post_id => nil)
+          elsif required.include? 'subscribed'
+            posts = posts.
+              qualify.
+              join(:post_subscriptions,
+                   :post_subscriptions__post_id => :posts__id,
+                   :post_subscriptions__account_id => account.id)
           end
         end
 
