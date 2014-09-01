@@ -230,16 +230,16 @@ module Libertree
           if excluded.include? 'liked'
             posts = posts.
               qualify.
-              join(:post_likes,
-                   :post_likes__post_id => :posts__id,
-                   :post_likes__member_id => account.member.id)
-          elsif required.include? 'liked'
-            posts = posts.
-              qualify.
               left_outer_join(:post_likes,
                               :post_likes__post_id => :posts__id,
                               :post_likes__member_id => account.member.id).
               where(:post_likes__post_id => nil)
+          elsif required.include? 'liked'
+            posts = posts.
+              qualify.
+              join(:post_likes,
+                   :post_likes__post_id => :posts__id,
+                   :post_likes__member_id => account.member.id)
           end
 
           if excluded.include? 'commented'
