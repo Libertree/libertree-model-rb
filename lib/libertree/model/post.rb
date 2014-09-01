@@ -312,7 +312,9 @@ module Libertree
       def self.not_hidden_by(account, posts=self)
         posts.
           qualify.
-          left_outer_join(:posts_hidden, :posts_hidden__post_id=>:posts__id, :posts_hidden__account_id => account.id).
+          left_outer_join(:posts_hidden,
+                          :posts_hidden__post_id => :posts__id,
+                          :posts_hidden__account_id => account.id).
           where(:posts_hidden__post_id => nil)
       end
 
