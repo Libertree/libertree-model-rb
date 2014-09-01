@@ -203,37 +203,34 @@ module Libertree
 
         flags = self.parsed_query['flag']
         if flags
-          excluded = flags[:negations]
-          required = flags[:requirements]
-
-          if excluded.include? 'tree'
-            posts = posts.exclude(:remote_id => nil)
-          elsif required.include? 'tree'
-            posts = posts.where(:remote_id => nil)
+          flags[:negations].each do |flag|
+            case flag
+            when 'tree'
+              posts = posts.exclude(:remote_id => nil)
+            when 'unread'
+              posts = Post.read_by(account, posts)
+            when 'liked'
+              posts = Post.without_liked_by(account.member, posts)
+            when 'commented'
+              posts = Post.without_commented_on_by(account.member, posts)
+            when 'subscribed'
+              posts = Post.without_subscribed_to_by(account, posts)
+            end
           end
 
-          if excluded.include? 'unread'
-            posts = Post.read_by(account, posts)
-          elsif required.include? 'unread'
-            posts = Post.unread_by(account, posts)
-          end
-
-          if excluded.include? 'liked'
-            posts = Post.without_liked_by(account.member, posts)
-          elsif required.include? 'liked'
-            posts = Post.liked_by(account.member, posts)
-          end
-
-          if excluded.include? 'commented'
-            posts = Post.without_commented_on_by(account.member, posts)
-          elsif required.include? 'commented'
-            posts = Post.commented_on_by(account.member, posts)
-          end
-
-          if excluded.include? 'subscribed'
-            posts = Post.without_subscribed_to_by(account, posts)
-          elsif required.include? 'subscribed'
-            posts = Post.subscribed_to_by(account, posts)
+          flags[:requirements].each do |flag|
+            case flag
+            when 'tree'
+              posts = posts.where(:remote_id => nil)
+            when 'unread'
+              posts = Post.unread_by(account, posts)
+            when 'liked'
+              posts = Post.liked_by(account.member, posts)
+            when 'commented'
+              posts = Post.commented_on_by(account.member, posts)
+            when 'subscribed'
+              posts = Post.subscribed_to_by(account, posts)
+            end
           end
         end
 
