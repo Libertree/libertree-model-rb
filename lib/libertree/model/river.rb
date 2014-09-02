@@ -313,8 +313,16 @@ module Libertree
           if set.values.flatten.count > 0
             excluded = set[:negations]
             required = set[:requirements]
+            regular  = set[:regular]
+
             posts = posts.exclude(column => excluded)  unless excluded.empty?
             posts = posts.where(column => required)    unless required.empty?
+
+            unless regular.empty?
+              posts = regular.
+                map {|value| posts.where(column => value)}.
+                reduce {|res, set| res.union(set)}
+            end
           end
         end
 
