@@ -384,6 +384,135 @@ module Libertree
           where(:post_subscriptions__post_id => nil)
       end
 
+      def self.filter_by_query(parsed_query, posts=self)
+        flags = parsed_query['flag']
+        if flags
+          flags[:negations].each do |flag|
+            case flag
+            when 'tree'
+              posts = posts.exclude(:remote_id => nil)
+            when 'unread'
+              posts = self.read_by(account, posts)
+            when 'liked'
+              posts = self.without_liked_by(account.member, posts)
+            when 'commented'
+              posts = self.without_commented_on_by(account.member, posts)
+            when 'subscribed'
+              posts = self.without_subscribed_to_by(account, posts)
+            end
+          end
+
+          flags[:requirements].each do |flag|
+            case flag
+            when 'tree'
+              posts = posts.where(:remote_id => nil)
+            when 'unread'
+              posts = self.unread_by(account, posts)
+            when 'liked'
+              posts = self.liked_by(account.member, posts)
+            when 'commented'
+              posts = self.commented_on_by(account.member, posts)
+            when 'subscribed'
+              posts = self.subscribed_to_by(account, posts)
+            end
+          end
+
+          sets = flags[:regular].map do |flag|
+            case flag
+            when 'tree'
+              posts.where(:remote_id => nil)
+            when 'unread'
+              self.unread_by(account, posts)
+            when 'liked'
+              self.liked_by(account.member, posts)
+            when 'commented'
+              self.commented_on_by(account.member, posts)
+            when 'subscribed'
+              self.subscribed_to_by(account, posts)
+            end
+          end.compact
+
+          unless sets.empty?
+            posts = sets.reduce do |res, set|
+              res.union(set)
+            end
+          end
+        end
+
+        tags = parsed_query['tag']
+        if tags.values.flatten.count > 0
+          # Careful!  Don't trust user input!
+          # remove any tag that includes array braces
+          excluded = tags[:negations].delete_if    {|t| t =~ /[{}]/ }
+          required = tags[:requirements].delete_if {|t| t =~ /[{}]/ }
+          regular  = tags[:regular].delete_if      {|t| t =~ /[{}]/ }
+
+          posts = posts.exclude(Sequel.pg_array_op(:hashtags).contains("{#{excluded.join(',')}}"))  unless excluded.empty?
+          posts = posts.where  (Sequel.pg_array_op(:hashtags).contains("{#{required.join(',')}}"))  unless required.empty?
+          posts = posts.where  (Sequel.pg_array_op(:hashtags).overlaps("{#{regular.join(',')}}" ))  unless regular.empty?
+        end
+
+        phrases = parsed_query['phrase']
+        if phrases.values.flatten.count > 0
+          req_patterns = phrases[:requirements].map {|phrase| /(^|\b|\s)#{Regexp.escape(phrase)}(\b|\s|$)/ }
+          neg_patterns = phrases[:negations].map    {|phrase| /(^|\b|\s)#{Regexp.escape(phrase)}(\b|\s|$)/ }
+          reg_patterns = phrases[:regular].map      {|phrase| /(^|\b|\s)#{Regexp.escape(phrase)}(\b|\s|$)/ }
+
+          unless req_patterns.empty?
+            posts = posts.grep(:text, req_patterns, { all_patterns: true, case_insensitive: true })
+          end
+
+          unless neg_patterns.empty?
+            # NOTE: using Regexp.union results in a postgresql error when the phrase includes '#', or '?'
+            pattern = "(#{neg_patterns.map(&:source).join('|')})"
+            posts = posts.exclude(Sequel.ilike(:text, pattern))
+          end
+
+          unless reg_patterns.empty?
+            posts = posts.grep(:text, reg_patterns, { all_patterns: false, case_insensitive: true })
+          end
+        end
+
+        words = parsed_query['word']
+        if words.values.flatten.count > 0
+          # strip query characters
+          words.each_pair {|k,v| words[k].each {|word| word.gsub!(/[\(\)&|!]/, '')}}
+
+          # filter by simple terms first to avoid having to check so many posts
+          # TODO: prevent empty arguments to to_tsquery
+          posts = posts.where(%{to_tsvector('simple', text)
+                               @@ (to_tsquery('simple', ?)
+                               && to_tsquery('simple', ?)
+                               && to_tsquery('simple', ?))},
+                             words[:negations].map{|w| "!#{w}" }.join(' & '),
+                             words[:requirements].join(' & '),
+                             words[:regular].join(' | '))
+        end
+
+        { 'visibility' => :visibility,
+          'from'       => :member_id,
+          'via'        => :via,
+        }.each_pair do |key, column|
+          set = parsed_query[key]
+          if set.values.flatten.count > 0
+            excluded = set[:negations]
+            required = set[:requirements]
+            regular  = set[:regular]
+
+            posts = posts.exclude(column => excluded)  unless excluded.empty?
+            posts = posts.where(column => required)    unless required.empty?
+
+            unless regular.empty?
+              posts = regular.
+                map {|value| posts.where(column => value)}.
+                reduce {|res, set| res.union(set)}
+            end
+          end
+        end
+
+        posts
+      end
+
       def collected_by?(account)
         DB.dbh[ "SELECT account_collected_post(?, ?)", account.id, self.id ].single_value
       end
