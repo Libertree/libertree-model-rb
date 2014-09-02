@@ -28,9 +28,9 @@ module Libertree
                opts.fetch(:limit, 30))
       end
 
-      def parsed_query(override_cache=false)
-        return @parsed_query  if @parsed_query && ! override_cache
-
+      # We need the river id only to prevent self-referential river
+      # queries.  For general purpose queries this is not required.
+      def self.query_parser(query, account_id, river_id=nil)
         patterns = {
           'phrase'       => /(?<sign>[+-])?"(?<arg>[^"]+)"/,
           'from'         => /(?<sign>[+-])?:from "(?<arg>.+?)"/,
@@ -54,13 +54,7 @@ module Libertree
           }
         end
 
-        full_query = self.query
-        if ! self.appended_to_all
-          full_query += ' ' + self.account.rivers_appended.map(&:query).join(' ')
-          full_query.strip!
-        end
-
-        scanner = StringScanner.new(full_query)
+        scanner = StringScanner.new(query)
         until scanner.eos? do
           scanner.skip(/\s+/)
           patterns.each_pair do |key, pattern|
@@ -90,11 +84,11 @@ module Libertree
                   res[key][group] << member.id
                 end
               when 'river'
-                if river = River[label: match[:arg]]
-                  res[key][group] << river  if river.id != self.id
+                if river_id && river = River[label: match[:arg]]
+                  res[key][group] << river  if river.id != river_id
                 end
               when 'contact-list'
-                if list = ContactList[ account_id: self.account.id, name: match[:arg] ]
+                if list = ContactList[ account_id: account_id, name: match[:arg] ]
                   ids = list.member_ids
                   res[key][group] << ids  unless ids.empty?
                 end
@@ -119,8 +113,19 @@ module Libertree
             end
           end
         end
+        res
+      end
 
-        @parsed_query = res
+      def parsed_query(override_cache=false)
+        return @parsed_query  if @parsed_query && ! override_cache
+
+        full_query = self.query
+        if ! self.appended_to_all
+          full_query += ' ' + self.account.rivers_appended.map(&:query).join(' ')
+          full_query.strip!
+        end
+
+        @parsed_query = River.query_parser(full_query, self.account.id, self.id)
       end
 
       def term_matches_post?(term, post, data)
