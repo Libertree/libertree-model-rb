@@ -200,6 +200,10 @@ module Libertree
       end
 
       def refresh_posts( n = 512 )
+        # delete posts early to avoid confusion about posts that don't
+        # match the new query
+        DB.dbh[ "DELETE FROM river_posts WHERE river_id = ?", self.id ].get
+
         # TODO: this is slow despite indices.
         #posts = Post.where{|p| ~Sequel.function(:post_hidden_by_account, p.id, account.id)}
 
@@ -219,12 +223,8 @@ module Libertree
           end
         end
 
-        # delete late to minimise interruption
-        DB.dbh.transaction do
-          DB.dbh[ "DELETE FROM river_posts WHERE river_id = ?", self.id ].get
-          if matching.any?
-            DB.dbh[ "INSERT INTO river_posts SELECT ?, id FROM posts WHERE id IN ?", self.id, matching.map(&:id)].get
-          end
+        if matching.any?
+          DB.dbh[ "INSERT INTO river_posts SELECT ?, id FROM posts WHERE id IN ?", self.id, matching.map(&:id)].get
         end
       end
 
