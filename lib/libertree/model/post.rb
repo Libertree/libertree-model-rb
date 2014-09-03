@@ -384,7 +384,7 @@ module Libertree
           where(:post_subscriptions__post_id => nil)
       end
 
-      def self.filter_by_query(parsed_query, posts=self)
+      def self.filter_by_query(parsed_query, account, posts=self)
         flags = parsed_query['flag']
         if flags
           flags[:negations].each do |flag|

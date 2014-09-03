@@ -204,7 +204,7 @@ module Libertree
         #posts = Post.where{|p| ~Sequel.function(:post_hidden_by_account, p.id, account.id)}
 
         # get posts that are not hidden by account and get cracking
-        posts = Post.filter_by_query(self.parsed_query, Post.not_hidden_by(account))
+        posts = Post.filter_by_query(self.parsed_query, self.account, Post.not_hidden_by(account))
 
         # get up to n posts
         # this is faster than using find_all on the set
