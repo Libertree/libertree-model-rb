@@ -1,6 +1,8 @@
 module Libertree
   class Query
     private
+    class ParseError < StandardError; end
+
     def patterns
       {
         'phrase'       => /(?<sign>[+-])?"(?<arg>[^"]+)"/,
@@ -17,9 +19,25 @@ module Libertree
       }
     end
 
+    def check_resource(res, term, &block)
+      err = if res.is_a? Array
+              res.any?(&:nil?)
+            else
+              res.nil?
+            end
+      if err
+        if @fail_on_error
+          fail ParseError, term
+        end
+      else
+        yield(*res)
+      end
+    end
+
     # We need the river id only to prevent self-referential river
     # queries.  For general purpose queries this is not required.
-    def initialize(query, account_id, river_id=nil)
+    def initialize(query, account_id, river_id=nil, fail_on_error=false)
+      @fail_on_error = fail_on_error
       @parsed_query = Hash.new
       @parsed_query.default_proc = proc do |hash,key|
         hash[key] = {
@@ -55,23 +73,27 @@ module Libertree
               @parsed_query[key][group] << match[:arg]
             when 'from'
               # TODO: eventually remove with_display_name check
-              if member = (Model::Member.with_handle(match[:arg]) || Model::Member.with_display_name(match[:arg]))
+              member = (Model::Member.with_handle(match[:arg]) || Model::Member.with_display_name(match[:arg]))
+              check_resource(member, term) do |member|
                 @parsed_query[key][group] << member.id
               end
             when 'river'
-              if river_id && river = Model::River[label: match[:arg]]
-                @parsed_query[key][group] << river  if river.id != river_id
+              river = Model::River[label: match[:arg]]
+              check_resource(river, term) do |river|
+                @parsed_query[key][group] << river  if river_id && river.id != river_id
               end
             when 'contact-list'
-              if list = Model::ContactList[ account_id: account_id, name: match[:arg] ]
+              list = Model::ContactList[ account_id: account_id, name: match[:arg] ]
+              check_resource(list, term) do |list|
                 ids = list.member_ids
                 @parsed_query[key][group] << ids  unless ids.empty?
               end
             when 'spring'
               # TODO: eventually remove with_display_name check
-              if member = (Model::Member.with_handle(match[:handle]) || Model::Member.with_display_name(match[:handle]))
-                pool = Model::Pool[ member_id: member.id, name: match[:spring_name], sprung: true ]
-                @parsed_query[key][group] << pool  if pool
+              member = (Model::Member.with_handle(match[:handle]) || Model::Member.with_display_name(match[:handle]))
+              pool = Model::Pool[ member_id: member.id, name: match[:spring_name], sprung: true ]  if member
+              check_resource([member, pool], term) do |list, pool|
+                @parsed_query[key][group] << pool
               end
             when 'word'
               # Only treat a matched word as a simple word if it consists only of word
