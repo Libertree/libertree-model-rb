@@ -2,10 +2,10 @@ source 'http://rubygems.org'
 gem 'sequel'
 gem 'timedcache'
 gem 'ruby-oembed'
-gem 'json'
 gem 'net-ldap'
 
 group 'extensions' do
+  gem 'json'
   gem 'parkdown'
   gem 'pg'
   gem 'bcrypt-ruby'
