@@ -9,7 +9,7 @@ group 'extensions' do
   gem 'parkdown'
   gem 'pg'
   gem 'bcrypt-ruby'
-  gem 'nokogiri', '~> 1.5'
+  gem 'nokogiri'
 end
 
 group 'development' do
