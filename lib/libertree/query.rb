@@ -86,7 +86,7 @@ module Libertree
               list = Model::ContactList[ account_id: account_id, name: match[:arg] ]
               check_resource(list, term) do |list|
                 ids = list.member_ids
-                @parsed_query[key][group] << ids  unless ids.empty?
+                @parsed_query[key][group] << [list.id, ids]  unless ids.empty?
               end
             when 'spring'
               # TODO: eventually remove with_display_name check
