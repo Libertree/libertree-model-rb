@@ -177,7 +177,7 @@ module Libertree
           if account = Account[ username: handle ]
             accounts << account
           elsif member = Member.with_handle(handle)
-            accounts << member.account
+            accounts << member.account  if member.account
           end
         end
 
