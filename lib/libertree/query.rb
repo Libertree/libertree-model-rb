@@ -157,7 +157,7 @@ module Libertree
                    when 'contact-list'
                      template = lambda {|v| Model::ContactList[v.first.to_i].label }
                    when 'spring'
-                     lambda {|v| pool = Model::Pool[v.to_i]; ":spring \"%s\" \"%s\"" % [pool.name, pool.member.handle] }
+                     lambda {|v| pool = Model::Pool[v.id.to_i]; ":spring \"%s\" \"%s\"" % [pool.name, pool.member.handle] }
                    end
         apply_template.call(template, groups)
       end
