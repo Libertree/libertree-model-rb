@@ -78,7 +78,7 @@ module Libertree
                 @parsed_query[key][group] << member.id
               end
             when 'river'
-              river = Model::River[label: match[:arg]]
+              river = Model::River[label: match[:arg], account_id: account_id]
               check_resource(river, term) do |river|
                 @parsed_query[key][group] << river  if river_id && river.id != river_id
               end
