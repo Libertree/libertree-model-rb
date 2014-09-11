@@ -141,7 +141,7 @@ module Libertree
                    when 'via'
                      lambda {|v| ":via \"%s\"" % v }
                    when 'visibility'
-                     lambda {|v| ":visibility \"%s\"" % v }
+                     lambda {|v| ":visibility %s" % v }
                    when 'word-count'
                      lambda {|v| ":word-count %s" % v }
                    when 'flag'
@@ -153,7 +153,7 @@ module Libertree
                    when 'from'
                      lambda {|v| ":from %s" % Model::Member[v.to_i].handle }
                    when 'river'
-                     lambda {|v| ":river %s" % Model::River[v.to_i].label }
+                     lambda {|v| ":river \"%s\"" % Model::River[v.to_i].label }
                    when 'contact-list'
                      template = lambda {|v| Model::ContactList[v.first.to_i].label }
                    when 'spring'
