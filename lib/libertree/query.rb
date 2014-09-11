@@ -151,7 +151,7 @@ module Libertree
                    when 'tag'
                      lambda {|v| "#%s" % v }
                    when 'from'
-                     lambda {|v| ":from %s" % Model::Member[v.to_i].handle }
+                     lambda {|v| ":from \"%s\"" % Model::Member[v.to_i].handle }
                    when 'river'
                      lambda {|v| ":river \"%s\"" % Model::River[v.to_i].label }
                    when 'contact-list'
