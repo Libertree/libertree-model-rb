@@ -6,7 +6,7 @@ module Libertree
     def patterns
       {
         'phrase'       => /(?<sign>[+-])?"(?<arg>[^"]+)"/,
-        'from'         => /(?<sign>[+-])?:from "(?<arg>.+?)"/,
+        'from'         => /(?<sign>[+-])?:from ("(?<arg>.+?)"|(?<arg>[^ ]+))/,
         'river'        => /(?<sign>[+-])?:river "(?<arg>.+?)"/,
         'contact-list' => /(?<sign>[+-])?:contact-list "(?<arg>.+?)"/,
         'via'          => /(?<sign>[+-])?:via "(?<arg>.+?)"/,
@@ -151,7 +151,7 @@ module Libertree
                    when 'tag'
                      lambda {|v| "#%s" % v }
                    when 'from'
-                     lambda {|v| ":from \"%s\"" % Model::Member[v.to_i].handle }
+                     lambda {|v| ":from %s" % Model::Member[v.to_i].handle }
                    when 'river'
                      lambda {|v| ":river \"%s\"" % Model::River[v.id.to_i].label }
                    when 'contact-list'
