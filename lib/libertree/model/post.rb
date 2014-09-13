@@ -209,8 +209,8 @@ module Libertree
       def delete_cascade(force=false)
         self.before_destroy  unless force
         # clear cached posts
-        Libertree::MODELCACHE.delete(self.cache_key)
-        Libertree::MODELCACHE.delete("#{self.cache_key}:get_full")
+        $LibertreeMODELCACHE.delete(self.cache_key)
+        $LibertreeMODELCACHE.delete("#{self.cache_key}:get_full")
 
         DB.dbh[ "SELECT delete_cascade_post(?)", self.id ].get
       end
@@ -300,8 +300,8 @@ module Libertree
         )
 
         # clear cached posts
-        Libertree::MODELCACHE.delete(self.cache_key)
-        Libertree::MODELCACHE.delete("#{self.cache_key}:get_full")
+        $LibertreeMODELCACHE.delete(self.cache_key)
+        $LibertreeMODELCACHE.delete("#{self.cache_key}:get_full")
         mark_as_unread_by_all
       end
 
@@ -559,7 +559,7 @@ module Libertree
 
       # Expand and embed all associated records.
       def self.get_full(id)
-        if cached = Libertree::MODELCACHE.get("#{self.cache_key(id)}:get_full")
+        if cached = $LibertreeMODELCACHE.get("#{self.cache_key(id)}:get_full")
           return cached
         end
 
@@ -627,7 +627,7 @@ module Libertree
           res
         }
 
-        Libertree::MODELCACHE.set("#{self.cache_key(id)}:get_full", post, 60)
+        $LibertreeMODELCACHE.set("#{self.cache_key(id)}:get_full", post, 60)
         post
       end
 
