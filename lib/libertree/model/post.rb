@@ -447,9 +447,9 @@ module Libertree
           required = tags[:requirements].delete_if {|t| t =~ /[{}]/ }
           regular  = tags[:regular].delete_if      {|t| t =~ /[{}]/ }
 
-          posts = posts.exclude(Sequel.pg_array_op(:hashtags).contains("{#{excluded.join(',')}}"))  unless excluded.empty?
-          posts = posts.where  (Sequel.pg_array_op(:hashtags).contains("{#{required.join(',')}}"))  unless required.empty?
-          posts = posts.where  (Sequel.pg_array_op(:hashtags).overlaps("{#{regular.join(',')}}" ))  unless regular.empty?
+          posts = posts.exclude(Sequel.pg_array(:hashtags).cast('text[]').pg_array.overlaps(excluded))  unless excluded.empty?
+          posts = posts.where  (Sequel.pg_array(:hashtags).cast('text[]').pg_array.contains(required))  unless required.empty?
+          posts = posts.where  (Sequel.pg_array(:hashtags).cast('text[]').pg_array.overlaps(regular))   unless regular.empty?
         end
 
         phrases = parsed_query['phrase']
