@@ -155,7 +155,7 @@ module Libertree
                    when 'river'
                      lambda {|v| ":river \"%s\"" % Model::River[v.id.to_i].label }
                    when 'contact-list'
-                     template = lambda {|v| Model::ContactList[v.first.to_i].label }
+                     template = lambda {|v| ":contact-list \"%s\"" % Model::ContactList[v.first.to_i].name }
                    when 'spring'
                      lambda {|v| pool = Model::Pool[v.id.to_i]; ":spring \"%s\" \"%s\"" % [pool.name, pool.member.handle] }
                    end
