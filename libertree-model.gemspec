@@ -10,6 +10,7 @@ Gem::Specification.new do |s|
   s.homepage    = 'http://libertreeproject.org/'
 
   s.add_dependency 'ruby-oembed', '~> 0.8.8'
+  s.add_dependency 'gpgme'
   s.add_dependency 'pg'
   s.add_dependency 'sequel'
   s.add_dependency 'timedcache'
