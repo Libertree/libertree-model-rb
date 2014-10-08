@@ -126,8 +126,7 @@ module Libertree
       end
 
       def notifications_unseen
-        return @notifications_unseen  if @notifications_unseen
-        @notifications_unseen = Notification.where(account_id: self.id, seen: false).order(:id).all
+        @notifications_unseen ||= Notification.where(account_id: self.id, seen: false).order(:id).all
       end
 
       def num_notifications_unseen
