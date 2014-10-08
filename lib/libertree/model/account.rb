@@ -129,6 +129,34 @@ module Libertree
         @notifications_unseen ||= Notification.where(account_id: self.id, seen: false).order(:id)
       end
 
+      def notifications_unseen_grouped(max_groups=5, limit=200)
+        grouped = {}
+        targets = [] # so we have a display order
+
+        notifs = self.notifications_unseen.reverse_order(:id).limit(limit)
+        notifs.each do |n|
+          next  if n.subject.nil?
+
+          target = case n.subject
+                   when Libertree::Model::Comment, Libertree::Model::PostLike
+                     n.subject.post
+                   when Libertree::Model::CommentLike
+                     n.subject.comment
+                   else
+                     n.subject
+                   end
+
+          if grouped[target]
+            grouped[target] << n
+          else
+            grouped[target] = [n]
+            targets << target
+          end
+        end
+
+        targets.take(max_groups).map {|t| grouped[t] }
+      end
+
       def num_notifications_unseen
         @num_notifications_unseen ||= Notification.where(account_id: self.id, seen: false).count
       end
