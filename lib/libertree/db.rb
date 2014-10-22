@@ -24,7 +24,8 @@ module Libertree
       @dbh ||= Sequel.postgres(host:     config['host'],
                                database: config['database'],
                                user:     config['username'],
-                               password: config['password'])
+                               password: config['password'],
+                               max_connections: 8)
 
       # ensure the latest required migration exists
       if @dbh[:schema_migrations].where(filename: LAST_MIGRATION).count == 0
