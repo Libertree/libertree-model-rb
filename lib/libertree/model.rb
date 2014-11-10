@@ -42,12 +42,3 @@ require_relative 'model/remote-storage-connection'
 require_relative 'model/server'
 require_relative 'model/session-account'
 require_relative 'model/url-expansion'
-
-require 'timedcache'
-# this is a global variable because we want to share it with all threads
-$LibertreeMODELCACHE = TimedCache.new
-Libertree::Model::Server.plugin  :caching, $LibertreeMODELCACHE, :ttl=>86400
-Libertree::Model::Member.plugin  :caching, $LibertreeMODELCACHE, :ttl=>1800
-Libertree::Model::Profile.plugin :caching, $LibertreeMODELCACHE, :ttl=>1800
-Libertree::Model::Post.plugin    :caching, $LibertreeMODELCACHE, :ttl=>120
-Libertree::Model::Comment.plugin :caching, $LibertreeMODELCACHE, :ttl=>120

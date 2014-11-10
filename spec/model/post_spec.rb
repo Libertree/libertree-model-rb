@@ -46,6 +46,7 @@ describe Libertree::Model::Post do
         before = @ringo.notifications.count
         @post.notify_mentioned
 
+        # TODO: MODELCACHE is gone, so is this still needed?
         # fetch account again to invalidate cache
         # TODO: shouldn't this be done in account.notify_about ?
         @ringo = Libertree::Model::Account[ username: 'ringo' ]

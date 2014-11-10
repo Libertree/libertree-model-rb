@@ -118,16 +118,6 @@ describe Libertree::Model::Account do
 
         @account.delete_cascade
 
-        # invalidate cached records; they would expire within minutes in a live system
-        [ Libertree::Model::Post[@post1_id],
-          Libertree::Model::Post[@post2_id],
-          Libertree::Model::Comment[@comment1_id],
-          Libertree::Model::Comment[@comment2_id],
-          Libertree::Model::Member[@member_id]
-        ].each do |cached|
-          $LibertreeMODELCACHE.delete(cached.cache_key)
-        end
-
         Libertree::Model::Post[@post1_id].should be_nil
         Libertree::Model::Post[@post2_id].should_not be_nil
         Libertree::Model::Comment[@comment1_id].should be_nil

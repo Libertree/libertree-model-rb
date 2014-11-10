@@ -13,7 +13,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'gpgme'
   s.add_dependency 'pg'
   s.add_dependency 'sequel'
-  s.add_dependency 'timedcache'
   s.add_dependency 'bcrypt-ruby', '= 3.0.1'
   s.add_dependency 'nokogiri', '~> 1.5'
   s.add_dependency 'net-ldap', '~> 0.5.1'
