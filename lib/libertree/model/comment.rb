@@ -1,3 +1,5 @@
+require_relative '../embedder'
+
 module Libertree
   module Model
     class Comment < Sequel::Model(:comments)
@@ -19,6 +21,7 @@ module Libertree
             *self.forests
           )
         end
+        Libertree::Embedder.autoembed(self.text)
       end
 
       # TODO: DB: association
