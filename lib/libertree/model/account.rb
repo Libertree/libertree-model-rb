@@ -426,6 +426,10 @@ module Libertree
       def remote_storage_connection
         @remote_storage_connection ||= RemoteStorageConnection[ account_id: self.id ]
       end
+
+      def files
+        Libertree::Model::File.s("SELECT * FROM files WHERE account_id = ? ORDER BY id DESC", self.id)
+      end
     end
   end
 end
