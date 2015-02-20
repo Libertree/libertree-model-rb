@@ -243,6 +243,7 @@ module Libertree
         account = super
         member = Member.create( account_id: account.id )
         AccountSettings.create( account_id: account.id )
+        River.create( label: "All posts", query: ":forest", account_id: account.id, home: true )
         account
       end
 
