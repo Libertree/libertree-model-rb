@@ -170,6 +170,8 @@ module Libertree
       end
 
       def notify_group_members
+        return  if self.group.nil?
+
         notification_attributes = {
           'type'    => 'group-post',
           'post_id' => self.id,
