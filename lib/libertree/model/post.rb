@@ -29,6 +29,7 @@ module Libertree
         end
         Libertree::Embedder.autoembed(self.text)
         self.notify_mentioned
+        self.notify_group_members
       end
 
       def before_update
@@ -165,6 +166,19 @@ module Libertree
 
         mentioned_accounts.each do |a|
           a.notify_about notification_attributes
+        end
+      end
+
+      def notify_group_members
+        notification_attributes = {
+          'type'    => 'group-post',
+          'post_id' => self.id,
+        }
+
+        self.group.members.each do |member|
+          if member.account
+            member.account.notify_about notification_attributes
+          end
         end
       end
 
@@ -682,6 +696,10 @@ module Libertree
         server = self.member.server
         origin = server ? server.domain : Server.own_domain
         "xmpp:#{origin}?;node=/posts;item=#{self.public_id}"
+      end
+
+      def group
+        Libertree::Model::Group[self.group_id]
       end
     end
   end
