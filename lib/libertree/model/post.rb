@@ -176,7 +176,7 @@ module Libertree
         }
 
         self.group.members.each do |member|
-          if member.account
+          if member.account && member != self.member
             member.account.notify_about notification_attributes
           end
         end
