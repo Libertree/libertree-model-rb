@@ -179,6 +179,10 @@ module Libertree
                     OR p.name_display ILIKE '%' || ? || '%'
                 }, name, name, name)
       end
+
+      def groups
+        Libertree::Model::GroupMember.where(member_id: self.id).map { |gm| gm.group }
+      end
     end
   end
 end
