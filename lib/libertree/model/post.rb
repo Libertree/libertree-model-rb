@@ -569,7 +569,7 @@ module Libertree
       end
 
       # Expand and embed all associated records.
-      def self.get_full(id)
+      def self.get_full(id, viewing_account = nil)
         post = self[id]
         return  unless post
 
@@ -590,7 +590,7 @@ module Libertree
         end
 
         get_comments = lambda do
-          comments = Comment.on_post(post)
+          comments = Comment.on_post(post, viewing_account: viewing_account)
           comment_likes = CommentLike.where('comment_id IN ?', comments.map(&:id)).reduce({}) do |hash, like|
             if hash[like.comment_id]
               hash[like.comment_id] << like

@@ -132,10 +132,16 @@ module Libertree
       # @param [Hash] opt options for restricting the comment set returned
       # @option opts [Fixnum] :from_id Only return comments with id greater than or equal to this id
       # @option opts [Fixnum] :to_id Only return comments with id less than this id
+      # @option opts [Account] :viewing_account An account to use to hide comments by ignored members
       def self.on_post(post, opt = {})
+        res = Comment.where(post_id: post.id)
+        if opt[:viewing_account]
+          res = res.exclude(member_id: opt[:viewing_account].ignored_members.map(&:id))
+        end
+
         # reverse ordering is required in order to get the *last* n
         # comments, rather than the first few when using :limit
-        res = Comment.where( :post_id => post.id ).reverse_order(:id)
+        res = res.reverse_order(:id)
         res = res.where{ id >= opt[:from_id].to_i }  if opt[:from_id]
         res = res.where{ id < opt[:to_id].to_i }     if opt[:to_id]
         res = res.limit(opt[:limit].to_i)            if opt[:limit]
