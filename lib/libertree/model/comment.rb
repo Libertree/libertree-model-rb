@@ -91,7 +91,11 @@ module Libertree
         local_comment_author = like.comment.member.account
         like_author = like.member.account
 
-        if local_comment_author && (!like_author || local_comment_author.id != like_author.id)
+        if(
+          local_comment_author &&
+          (!like_author || local_comment_author.id != like_author.id) &&
+          ! local_comment_author.ignoring?(like.member)
+        )
           local_comment_author.notify_about notification_attributes
         end
       end
