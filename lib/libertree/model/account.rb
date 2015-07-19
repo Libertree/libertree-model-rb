@@ -317,6 +317,7 @@ module Libertree
         end
         time = Time.at( opts.fetch(:time, Time.now.to_f) ).strftime("%Y-%m-%d %H:%M:%S.%6N%z")
 
+        ignored_member_ids = self.ignored_members.map(&:id)
         Message.s_wrap(
           %{
             SELECT *
@@ -327,7 +328,10 @@ module Libertree
             LIMIT #{limit}
           },
           self.member.id, time
-        )
+        ).reject { |message|
+          ignored_member_ids.include?(message.sender_member_id)
+        }
+
       end
 
       # @return [Boolean] true iff password reset was successfully set up
