@@ -169,7 +169,9 @@ module Libertree
         }
 
         mentioned_accounts.each do |a|
-          a.notify_about notification_attributes
+          if ! a.ignoring?(self.member)
+            a.notify_about notification_attributes
+          end
         end
       end
 
