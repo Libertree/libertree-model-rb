@@ -116,7 +116,11 @@ module Libertree
         local_post_author = post.member.account
         pool_owner = pool.member.account
 
-        if local_post_author && local_post_author != pool_owner
+        if(
+          local_post_author &&
+          local_post_author != pool_owner &&
+          ! local_post_author.ignoring?(pool.member)
+        )
           local_post_author.notify_about( {
             'type'         => 'springing',
             'pool_post_id' => pool_post.id,
