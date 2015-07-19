@@ -436,6 +436,24 @@ module Libertree
       def files
         Libertree::Model::File.s("SELECT * FROM files WHERE account_id = ? ORDER BY id DESC", self.id)
       end
+
+      def ignored_members
+        Libertree::Model::IgnoredMember.where(account_id: self.id).map(&:member)
+      end
+
+      def ignoring?(member)
+        self.ignored_members.include? member
+      end
+
+      def ignore_member(member)
+        return  if member.nil?
+        Libertree::Model::IgnoredMember.create(account_id: self.id, member_id: member.id)
+      end
+
+      def unignore_member(member)
+        return  if member.nil?
+        Libertree::Model::IgnoredMember.where(account_id: self.id, member_id: member.id).delete
+      end
     end
   end
 end
