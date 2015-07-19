@@ -125,9 +125,11 @@ module Libertree
           m = Member[member_id]
           if m.account
             a = m.account
-            a.notify_about  'type' => 'message', 'message_id' => message.id
-            if a.email && a.settings.forward_dms_via_email
-              message.forward_via_email(a)
+            if ! a.ignoring?(sender_member)
+              a.notify_about  'type' => 'message', 'message_id' => message.id
+              if a.email && a.settings.forward_dms_via_email
+                message.forward_via_email(a)
+              end
             end
           end
         end
