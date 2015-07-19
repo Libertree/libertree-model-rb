@@ -138,9 +138,9 @@ module Libertree
         if comment.member.account
           accounts = accounts.select {|a| a.id != comment.member.account.id }
         end
-        accounts.each do |a|
-          if ! comment.post.hidden_by?(a)
-            a.notify_about notification_attributes
+        accounts.each do |account|
+          if ! comment.post.hidden_by?(account) && ! account.ignoring?(comment.member)
+            account.notify_about notification_attributes
           end
         end
       end
