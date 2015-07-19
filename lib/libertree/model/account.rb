@@ -171,17 +171,31 @@ module Libertree
       end
 
       def num_chat_unseen
-        ChatMessage.where(to_member_id: self.member.id, seen: false).count
+        ChatMessage.where(
+          to_member_id: self.member.id,
+          seen: false
+        ).exclude(
+          from_member_id: self.ignored_members.map(&:id)
+        ).count
       end
 
       def num_chat_unseen_from_partner(member)
-        ChatMessage.where(from_member_id: member.id,
-                          to_member_id: self.member.id,
-                          seen: false).count
+        ChatMessage.where(
+          from_member_id: member.id,
+          to_member_id: self.member.id,
+          seen: false
+        ).exclude(
+          from_member_id: self.ignored_members.map(&:id)
+        ).count
       end
 
       def chat_messages_unseen
-        ChatMessage.where(to_member_id: self.member.id, seen: false).all
+        ChatMessage.where(
+          to_member_id: self.member.id,
+          seen: false
+        ).exclude(
+          from_member_id: self.ignored_members.map(&:id)
+        ).all
       end
 
       def chat_partners_current
@@ -208,6 +222,11 @@ module Libertree
                   OR cm.time_created > NOW() - '1 hour'::INTERVAL
                 )
                 AND m.id = cm.from_member_id
+                AND NOT EXISTS(
+                  SELECT 1
+                  FROM ignored_members im
+                  WHERE im.member_id = cm.from_member_id
+                )
             ) UNION (
               SELECT
                     DISTINCT m.*
@@ -226,9 +245,15 @@ module Libertree
                 cm.from_member_id = ?
                 AND cm.time_created > NOW() - '1 hour'::INTERVAL
                 AND m.id = cm.to_member_id
+                AND NOT EXISTS(
+                  SELECT 1
+                  FROM ignored_members im
+                  WHERE im.member_id = cm.to_member_id
+                )
             )
           },
-          self.member.id, self.member.id
+          self.member.id,
+          self.member.id
         )
       end
 
