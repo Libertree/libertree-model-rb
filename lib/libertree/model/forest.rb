@@ -59,12 +59,23 @@ module Libertree
         local_is_member
       end
 
-      # @param [Array] trees An Array of Strings.
-      def set_trees_by_domain( trees )
+      # @param [Array(String)] domains
+      # @return [Array(Model::Server)] any new Server records that were created
+      def set_trees_by_domain(domains)
         DB.dbh[ "DELETE FROM forests_servers WHERE forest_id = ?", self.id ].get
-        trees.each do |tree|
-          add  Model::Server.find_or_create( domain: tree )
+        new_trees = []
+
+        domains.each do |domain|
+          tree = Model::Server[domain: domain]
+          if tree.nil?
+            tree = Model::Server.create(domain: domain)
+            new_trees << tree
+          end
+
+          self.add tree
         end
+
+        new_trees
       end
     end
   end
