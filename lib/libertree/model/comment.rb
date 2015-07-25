@@ -140,7 +140,9 @@ module Libertree
       def self.on_post(post, opt = {})
         res = Comment.where(post_id: post.id)
         if opt[:viewing_account]
-          res = res.exclude(member_id: opt[:viewing_account].ignored_members.map(&:id))
+          # Array() because sometimes opt[:viewing_account] is a strange nil-like object for some reason.
+          # Ramaze weirdness?
+          res = res.exclude(member_id: Array(opt[:viewing_account].ignored_members).map(&:id))
         end
 
         # reverse ordering is required in order to get the *last* n
