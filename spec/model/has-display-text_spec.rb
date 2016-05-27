@@ -59,5 +59,23 @@ describe Libertree::Model::HasDisplayText do
         expect(retval).to eq "abcde    f..."
       end
     end
+
+    context 'when the text is comprised completely of quoted text' do
+      let(:length) { 16 }
+      let(:text) { "> after an alcohol-fueled argument" }
+
+      it 'returns the quoted text' do
+        expect(retval).to eq "after an alcohol..."
+      end
+    end
+
+    context 'when the text is comprised completely of multiple lines of quoted text' do
+      let(:length) { 16 }
+      let(:text) { "> after an\n>alcohol-fueled argument" }
+
+      it 'returns the quoted text' do
+        expect(retval).to eq "after an alcohol..."
+      end
+    end
   end
 end
