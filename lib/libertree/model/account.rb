@@ -361,15 +361,14 @@ module Libertree
 
       # @return [Boolean] true iff password reset was successfully set up
       def self.set_up_password_reset_for(email)
-        account = self.where(email: email).first
-        if account.nil?
-          return false
+        # TODO: Don't allow registration of accounts with the same email but different case
+        account = self.where('LOWER(email) = ?', email.downcase).first
+        if account
+          account.password_reset_code = SecureRandom.hex(16)
+          account.password_reset_expiry = Time.now + 60 * 60
+          account.save
+          account
         end
-
-        account.password_reset_code = SecureRandom.hex(16)
-        account.password_reset_expiry = Time.now + 60 * 60
-        account.save
-        account
       end
 
       # NOTE: this method does not save the account record

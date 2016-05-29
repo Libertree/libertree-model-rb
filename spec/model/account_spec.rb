@@ -134,15 +134,39 @@ describe Libertree::Model::Account do
     end
 
     describe '.set_up_password_reset_for' do
-      let(:retval) { Libertree::Model::Account.set_up_password_reset_for(email) }
+      let(:email_argument) { nil }
+      let(:retval) { Libertree::Model::Account.set_up_password_reset_for(email_argument) }
 
       context 'when the given email matches the account exactly' do
         let(:email) { 'someemail@domain.com' }
+        let(:email_argument) { email }
 
         it 'sets up the password reset on the account and returns true' do
           expect {
             expect(retval).to be_truthy
           }.to change { Libertree::Model::Account[account.id].password_reset_code }.from(nil)
+        end
+      end
+
+      context 'when the given email matches the account, but with different case' do
+        let(:email) { 'someemail@domain.com' }
+        let(:email_argument) { 'SomeEmail@domain.com' }
+
+        it 'sets up the password reset on the account and returns true' do
+          expect {
+            expect(retval).to be_truthy
+          }.to change { Libertree::Model::Account[account.id].password_reset_code }.from(nil)
+        end
+      end
+
+      context 'when the given email matches no account' do
+        let(:email) { 'someemail@domain.com' }
+        let(:email_argument) { 'differentemail@differentdomain.com' }
+
+        it 'does not set up the password reset on the account; returns false' do
+          expect {
+            expect(retval).to be_falsy
+          }.not_to change { Libertree::Model::Account[account.id].password_reset_code }.from(nil)
         end
       end
     end
