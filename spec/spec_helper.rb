@@ -1,5 +1,7 @@
 if RUBY_VERSION =~ /^1\.9/
   require 'ruby-debug'
+elsif RUBY_VERSION =~ /^2\.0/
+  require 'pry'
 end
 require_relative '../lib/libertree/db'
 
@@ -12,6 +14,7 @@ Libertree::DB.dbh
 ########################
 
 require_relative '../lib/libertree/model'
+require 'database_cleaner'
 require_relative 'factories'
 
 if ENV['LIBERTREE_ENV'] != 'test'
@@ -19,4 +22,20 @@ if ENV['LIBERTREE_ENV'] != 'test'
   exit 1
 end
 
-Libertree::Model::Server.own_domain = "localhost.localdomain"
+# So that FactoryGirl can be used with Sequel
+class Sequel::Model
+  alias_method :save!, :save
+end
+
+RSpec.configure do |config|
+  config.before(:suite) do
+    DatabaseCleaner.start
+    DatabaseCleaner.clean
+  end
+
+  config.around(:each) do |example|
+    DatabaseCleaner.cleaning do
+      example.run
+    end
+  end
+end
