@@ -16,5 +16,5 @@ Gem::Specification.new do |s|
   s.add_dependency 'bcrypt-ruby', '= 3.0.1'
   s.add_dependency 'nokogiri', '~> 1.5'
   s.add_dependency 'net-ldap', '~> 0.5.1'
-  s.add_dependency 'parkdown', '~> 1.4.26'
+  s.add_dependency 'parkdown-libertree', '~> 1.4.27'
 end

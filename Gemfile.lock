@@ -1,10 +1,4 @@
 GIT
-  remote: git://github.com/Libertree/parkdown
-  revision: 95e024c7481a1495ee4d17fc3aca176ce7ba8773
-  specs:
-    parkdown (1.4.26)
-
-GIT
   remote: git://github.com/mark-moseley/linecache
   revision: 869c6a65155068415925067e480741bd0a71527e
   specs:
@@ -38,6 +32,7 @@ GEM
     nokogiri (1.6.8)
       mini_portile2 (~> 2.1.0)
       pkg-config (~> 1.1.7)
+    parkdown-libertree (1.4.27)
     pg (0.15.1)
     pkg-config (1.1.7)
     pry (0.10.3)
@@ -92,7 +87,7 @@ DEPENDENCIES
   linecache19!
   net-ldap
   nokogiri
-  parkdown!
+  parkdown-libertree
   pg
   pry-byebug
   rspec
