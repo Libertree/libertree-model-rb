@@ -5,7 +5,7 @@ gem 'net-ldap'
 
 group 'extensions' do
   gem 'json'
-  gem 'parkdown'
+  gem 'parkdown', git: 'git://github.com/Libertree/parkdown'
   gem 'pg'
   gem 'bcrypt-ruby'
   gem 'nokogiri'
