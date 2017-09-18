@@ -5,8 +5,17 @@ require 'set'
 require_relative '../embedder'
 
 module Libertree
+  class VisibilityExpansionError < StandardError
+  end
+
   module Model
     class Post < Sequel::Model(:posts)
+      VISIBILITY_RANK = {
+        'tree' => 0,
+        'forest' => 1,
+        'internet' => 2,
+      }
+
       include IsRemoteOrLocal
       extend HasSearchableText
       include HasDisplayText
@@ -313,6 +322,10 @@ module Libertree
       end
 
       def revise(text_new, visibility = self.visibility)
+        if VISIBILITY_RANK[visibility] > VISIBILITY_RANK[self.visibility] && ! visibility_expandable?
+          raise VisibilityExpansionError
+        end
+
         PostRevision.create(
           post_id: self.id,
           text:    self.text
@@ -324,6 +337,10 @@ module Libertree
         )
 
         mark_as_unread_by_all
+      end
+
+      private def visibility_expandable?
+        comments.empty? && likes.empty?
       end
 
       def hidden_by?(account)
