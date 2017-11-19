@@ -170,14 +170,48 @@ module Libertree
         @springs = nil
       end
 
-      def self.search(name)
-        self.s(%{SELECT m.* FROM members m
-                 LEFT OUTER JOIN accounts a ON (a.id = m.account_id)
-                 LEFT OUTER JOIN profiles p ON (m.id = p.member_id)
-                 WHERE m.username     ILIKE '%' || ? || '%'
-                    OR a.username     ILIKE '%' || ? || '%'
-                    OR p.name_display ILIKE '%' || ? || '%'
-                }, name, name, name)
+      def self.search(name:, include_old: false)
+        if include_old
+          newness_clause = "TRUE"
+        else
+          newness_clause = %{
+            EXISTS (
+              SELECT 1
+              FROM posts po
+              WHERE
+                po.member_id = m.id
+                AND po.time_created > NOW() - '30 days'::INTERVAL
+            ) OR EXISTS (
+              SELECT 1
+              FROM comments c
+              WHERE
+                c.member_id = m.id
+                AND c.time_created > NOW() - '30 days'::INTERVAL
+            )
+          }
+        end
+
+        self.s(
+          %{
+            SELECT
+                m.*
+            FROM
+                members m
+                LEFT OUTER JOIN accounts a ON (a.id = m.account_id)
+                LEFT OUTER JOIN profiles p ON (m.id = p.member_id)
+            WHERE
+              (
+                m.username ILIKE '%' || ? || '%'
+                OR a.username ILIKE '%' || ? || '%'
+                OR p.name_display ILIKE '%' || ? || '%'
+              ) AND (
+                #{newness_clause}
+              )
+          },
+          name,
+          name,
+          name
+        )
       end
 
       def groups

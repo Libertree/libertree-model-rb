@@ -1,5 +1,5 @@
 source 'http://rubygems.org'
-gem 'sequel'
+gem 'sequel', '< 5'
 gem 'ruby-oembed'
 gem 'net-ldap'
 
