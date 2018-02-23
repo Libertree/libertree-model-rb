@@ -236,15 +236,15 @@ describe Libertree::Model::Post do
       members = accounts.map(&:member)
 
       @member = members.first
-      @post = Libertree::Model::Post.create(FactoryGirl.attributes_for( :post, member_id: members.sample.id, text: 'post' ))
+      @post = Libertree::Model::Post.create(FactoryGirl.attributes_for( :post, member_id: members[0].id, text: 'post' ))
       5.times do |i|
-        comment = Libertree::Model::Comment.create(FactoryGirl.attributes_for(:comment, member_id: members.sample.id, post_id: @post.id))
+        comment = Libertree::Model::Comment.create(FactoryGirl.attributes_for(:comment, member_id: members[1].id, post_id: @post.id))
         4.times do |i|
-          Libertree::Model::CommentLike.create(FactoryGirl.attributes_for(:comment_like, member_id: members.sample.id, comment_id: comment.id))
+          Libertree::Model::CommentLike.create(FactoryGirl.attributes_for(:comment_like, member_id: members[2].id, comment_id: comment.id))
         end
       end
       3.times do
-        Libertree::Model::PostLike.create(FactoryGirl.attributes_for(:comment_like, member_id: members.sample.id, post_id: @post.id))
+        Libertree::Model::PostLike.create(FactoryGirl.attributes_for(:comment_like, member_id: members[3].id, post_id: @post.id))
       end
     end
 
@@ -473,7 +473,7 @@ describe Libertree::Model::Post do
           expect( pool.includes?(@post) ).to be(true)
         end
 
-        pool = @pools.sample
+        pool = @pools[1]
         @post.update_collection_status_for_member(@member.id, [ pool.id ])
         expect( pool.includes?(@post) ).to be(true)
         removed = @pools - [pool]
