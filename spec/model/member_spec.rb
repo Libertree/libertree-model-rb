@@ -63,6 +63,7 @@ describe Libertree::Model::Member do
       Libertree::DB.dbh.execute 'TRUNCATE members CASCADE'
       Libertree::DB.dbh.execute 'TRUNCATE accounts CASCADE'
     end
+
     it 'returns local and remote members if username or display name match' do
       account1 = Libertree::Model::Account.create({username: 'test',  password_encrypted: '1234'})
       member1 = account1.member
@@ -80,7 +81,9 @@ describe Libertree::Model::Member do
       member4.profile.name_display = "don't care"
       member4.profile.save
 
-      expect( Libertree::Model::Member.search("test") ).to match_array([member1, member2, member3])
+      expect(
+        Libertree::Model::Member.search(name: "test", include_old: true)
+      ).to match_array([member1, member2, member3])
     end
   end
 end
