@@ -46,8 +46,10 @@ module Libertree
       end
 
       def self.mark_seen_for_account_and_message(account, message)
-        self.where("account_id = ? AND data = ?", account.id, %|{"type":"message","message_id":#{message.id}}|).
-          update(seen: true)
+        self.where(
+          account_id: account.id,
+          data: %|{"type":"message","message_id":#{message.id}}|
+        ).update(seen: true)
         account.dirty
       end
 

@@ -67,8 +67,10 @@ module Libertree
       def self.mark_seen_between(account, member_id)
         return  if account.nil?
 
-        self.where("from_member_id = ? AND to_member_id = ?", member_id.to_i, account.member.id).
-          update(seen: true)
+        self.where(
+          from_member_id: member_id.to_i,
+          to_member_id: account.member.id
+        ).update(seen: true)
       end
     end
   end

@@ -290,7 +290,10 @@ module Libertree
       end
 
       def invitations_not_accepted
-        Invitation.where("inviter_account_id = ? AND account_id IS NULL", self.id).order(:id).all
+        Invitation.where(
+          inviter_account_id: self.id,
+          account_id: nil
+        ).order(:id).all
       end
 
       def new_invitation
