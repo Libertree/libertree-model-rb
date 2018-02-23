@@ -230,9 +230,10 @@ describe Libertree::Model::Post do
 
   describe '#get_full' do
     before do
-      members = (1..5).map do
+      accounts = (1..5).map {
         Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
-      end
+      }
+      members = accounts.map(&:member)
 
       @member = members.first
       @post = Libertree::Model::Post.create(FactoryGirl.attributes_for( :post, member_id: members.sample.id, text: 'post' ))
