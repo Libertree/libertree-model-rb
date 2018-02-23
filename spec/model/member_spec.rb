@@ -25,6 +25,10 @@ describe Libertree::Model::Member do
   end
 
   describe '#handle' do
+    before do
+      Libertree::Model::Server.own_domain = "localhost.net"
+    end
+
     it 'returns the username and domain part for local and remote members' do
       account = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
       local = account.member
