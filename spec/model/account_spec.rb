@@ -114,21 +114,21 @@ describe Libertree::Model::Account do
         end
 
         it 'deletes the account and all subordinate entities belonging to the account, but not entities not belonging to the account' do
-          Libertree::Model::Post[@post1_id].should_not be_nil
-          Libertree::Model::Post[@post2_id].should_not be_nil
-          Libertree::Model::Comment[@comment1_id].should_not be_nil
-          Libertree::Model::Comment[@comment2_id].should_not be_nil
-          Libertree::Model::Member[@member_id].should_not be_nil
-          Libertree::Model::Account[@account_id].should_not be_nil
+          expect(Libertree::Model::Post[@post1_id]).not_to be_nil
+          expect(Libertree::Model::Post[@post2_id]).not_to be_nil
+          expect(Libertree::Model::Comment[@comment1_id]).not_to be_nil
+          expect(Libertree::Model::Comment[@comment2_id]).not_to be_nil
+          expect(Libertree::Model::Member[@member_id]).not_to be_nil
+          expect(Libertree::Model::Account[@account_id]).not_to be_nil
 
           account.delete_cascade
 
-          Libertree::Model::Post[@post1_id].should be_nil
-          Libertree::Model::Post[@post2_id].should_not be_nil
-          Libertree::Model::Comment[@comment1_id].should be_nil
-          Libertree::Model::Comment[@comment2_id].should_not be_nil
-          Libertree::Model::Member[@member_id].should be_nil
-          Libertree::Model::Account[@account_id].should be_nil
+          expect(Libertree::Model::Post[@post1_id]).to be_nil
+          expect(Libertree::Model::Post[@post2_id]).not_to be_nil
+          expect(Libertree::Model::Comment[@comment1_id]).to be_nil
+          expect(Libertree::Model::Comment[@comment2_id]).not_to be_nil
+          expect(Libertree::Model::Member[@member_id]).to be_nil
+          expect(Libertree::Model::Account[@account_id]).to be_nil
         end
       end
     end
