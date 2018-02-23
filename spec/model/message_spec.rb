@@ -121,7 +121,7 @@ describe Libertree::Model::Message do
       @message_self2.delete_for_participant(@member)
       deleted = Libertree::DB.dbh[ "SELECT deleted FROM message_recipients WHERE message_id = ? AND member_id = ?",
                                  @message_self2.id, @member.id ].single_value
-      expect( deleted ).to be_true
+      expect( deleted ).to be_truthy
     end
   end
 end
