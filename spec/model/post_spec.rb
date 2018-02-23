@@ -221,10 +221,10 @@ describe Libertree::Model::Post do
 
       @post.mark_as_unread_by_all except: [@ringo]
 
-      expect( @post.read_by?(@john)   ).to be_false
-      expect( @post.read_by?(@paul)   ).to be_false
-      expect( @post.read_by?(@george) ).to be_false
-      expect( @post.read_by?(@ringo)  ).to be_true
+      expect( @post.read_by?(@john)   ).to be_falsy
+      expect( @post.read_by?(@paul)   ).to be_falsy
+      expect( @post.read_by?(@george) ).to be_falsy
+      expect( @post.read_by?(@ringo)  ).to be_truthy
     end
   end
 
