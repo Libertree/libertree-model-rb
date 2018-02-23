@@ -9,7 +9,12 @@ module Libertree
         else
           dict = 'english'
         end
-        self.where("(to_tsvector('simple', text) || to_tsvector('english', text)) @@ plainto_tsquery('#{dict}', ?)", q).
+        self.where(
+          Sequel.lit(
+            "(to_tsvector('simple', text) || to_tsvector('english', text)) @@ plainto_tsquery('#{dict}', ?)",
+            q
+          )
+        ).
           reverse_order(:time_created).
           limit(limit.to_i).
           all

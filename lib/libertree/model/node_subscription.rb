@@ -16,8 +16,9 @@ module Libertree
         if jid_or_host.include?('@')
           self.where(jid: jid_or_host)
         else
-          host_pattern = self.where.escape_like(jid_or_host.to_s)
-          self.where(Sequel.like(:jid, "%@#{host_pattern}"))
+          host_pattern = jid_or_host.to_s
+          escaped_host_pattern = host_pattern.gsub(/[\\%_]/) { |m| "\\#{m}" }  # Lifted from Sequel source code
+          self.where(Sequel.like(:jid, "%@#{escaped_host_pattern}"))
         end
       end
     end

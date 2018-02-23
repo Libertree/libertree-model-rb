@@ -96,7 +96,13 @@ module Libertree
       def mark_as_unread_by_all( options = {} )
         except_accounts = options.fetch(:except, [])
         if except_accounts.any?
-          DB.dbh[:posts_read].where('post_id = ? AND NOT account_id IN ?', self.id, except_accounts.map(&:id)).delete
+          DB.dbh[:posts_read].where(
+            Sequel.lit(
+              'post_id = ? AND NOT account_id IN ?',
+              self.id,
+              except_accounts.map(&:id)
+            )
+          ).delete
         else
           DB.dbh[ "DELETE FROM posts_read WHERE post_id = ?", self.id ].get
         end
@@ -351,47 +357,47 @@ module Libertree
         posts.
           qualify.
           left_outer_join(:posts_hidden,
-                          :posts_hidden__post_id => :posts__id,
-                          :posts_hidden__account_id => account.id).
-          where(:posts_hidden__post_id => nil)
+                          Sequel[:posts_hidden][:post_id] => Sequel[:posts][:id],
+                          Sequel[:posts_hidden][:account_id] => account.id).
+          where(Sequel[:posts_hidden][:post_id] => nil)
       end
 
       def self.read_by(account, posts=self)
         posts.
           qualify.
           join(:posts_read,
-               :posts_read__post_id => :posts__id,
-               :posts_read__account_id => account.id)
+               Sequel[:posts_read][:post_id] => Sequel[:posts][:id],
+               Sequel[:posts_read][:account_id] => account.id)
       end
 
       def self.unread_by(account, posts=self)
         posts.
           qualify.
           left_outer_join(:posts_read,
-                          :posts_read__post_id => :posts__id,
-                          :posts_read__account_id => account.id).
-          where(:posts_read__post_id => nil)
+                          Sequel[:posts_read][:post_id] => Sequel[:posts][:id],
+                          Sequel[:posts_read][:account_id] => account.id).
+          where(Sequel[:posts_read][:post_id] => nil)
       end
 
       def self.liked_by(member, posts=self)
         posts.
           qualify.
           join(:post_likes,
-               :post_likes__post_id => :posts__id,
-               :post_likes__member_id => member.id)
+               Sequel[:post_likes][:post_id] => Sequel[:posts][:id],
+               Sequel[:post_likes][:member_id] => member.id)
       end
 
       def self.without_liked_by(member, posts=self)
         posts.
           qualify.
           join(:post_likes,
-               :post_likes__post_id => :posts__id,
-               :post_likes__member_id => member.id)
+               Sequel[:post_likes][:post_id] => Sequel[:posts][:id],
+               Sequel[:post_likes][:member_id] => member.id)
       end
 
       def self.commented_on_by(member, posts=self)
         posts.
-          where(:posts__id => Comment.
+          where(Sequel[:posts][:id] => Comment.
                 select(:post_id).
                 distinct(:post_id).
                 where(:member_id => member.id))
@@ -399,7 +405,7 @@ module Libertree
 
       def self.without_commented_on_by(member, posts=self)
         posts.
-          exclude(:posts__id => Comment.
+          exclude(Sequel[:posts][:id] => Comment.
                   select(:post_id).
                   distinct(:post_id).
                   where(:member_id => member.id))
@@ -409,17 +415,17 @@ module Libertree
         posts.
           qualify.
           join(:post_subscriptions,
-               :post_subscriptions__post_id => :posts__id,
-               :post_subscriptions__account_id => account.id)
+               Sequel[:post_subscriptions][:post_id] => Sequel[:posts][:id],
+               Sequel[:post_subscriptions][:account_id] => account.id)
       end
 
       def self.without_subscribed_to_by(account, posts=self)
         posts.
           qualify.
           left_outer_join(:post_subscriptions,
-                          :post_subscriptions__post_id => :posts__id,
-                          :post_subscriptions__account_id => account.id).
-          where(:post_subscriptions__post_id => nil)
+                          Sequel[:post_subscriptions][:post_id] => Sequel[:posts][:id],
+                          Sequel[:post_subscriptions][:account_id] => account.id).
+          where(Sequel[:post_subscriptions][:post_id] => nil)
       end
 
       def self.filter_by_query(parsed_query, account, posts=self)
@@ -618,7 +624,7 @@ module Libertree
 
         get_comments = lambda do
           comments = Comment.on_post(post, viewing_account: viewing_account)
-          comment_likes = CommentLike.where('comment_id IN ?', comments.map(&:id)).reduce({}) do |hash, like|
+          comment_likes = CommentLike.where(comment_id: comments.map(&:id)).reduce({}) do |hash, like|
             if hash[like.comment_id]
               hash[like.comment_id] << like
             else
@@ -700,8 +706,11 @@ module Libertree
 
       def pools_by_member(member_id)
         Libertree::Model::Pool.qualify.
-          join(:pools_posts, :pools_posts__pool_id => :pools__id).
-          where(pools_posts__post_id: self.id, pools__member_id: member_id)
+          join(:pools_posts, Sequel[:pools_posts][:pool_id] => Sequel[:pools][:id]).
+          where(
+            Sequel[:pools_posts][:post_id] => self.id,
+            Sequel[:pools][:member_id] => member_id
+          )
       end
 
       def update_collection_status_for_member(member_id, pool_ids)

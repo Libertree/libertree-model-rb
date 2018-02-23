@@ -72,7 +72,7 @@ GEM
     ruby-oembed (0.8.8)
     ruby_core_source (0.1.5)
       archive-tar-minitar (>= 0.5.2)
-    sequel (4.7.0)
+    sequel (5.5.0)
     slop (3.6.0)
 
 PLATFORMS
@@ -94,7 +94,7 @@ DEPENDENCIES
   ruby-debug-base19x (~> 0.11.30.pre4)
   ruby-debug19
   ruby-oembed
-  sequel (< 5)
+  sequel (~> 5.5.0)
 
 BUNDLED WITH
-   1.13.1
+   1.16.0
