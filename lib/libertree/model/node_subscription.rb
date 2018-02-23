@@ -1,6 +1,8 @@
 module Libertree
   module Model
     class NodeSubscription < Sequel::Model(:node_subscriptions)
+      set_primary_key [:id]
+
       STATES = [ :none,
                  :pending,
                  :unconfigured,
