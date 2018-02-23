@@ -1,7 +1,7 @@
 source 'http://rubygems.org'
 gem 'sequel', '~> 5.5.0'
 gem 'ruby-oembed'
-gem 'net-ldap'
+gem 'net-ldap', '~> 0.16.1'
 
 group 'extensions' do
   gem 'json'
