@@ -244,6 +244,23 @@ module Libertree
                 self.id,
                 self.account.id ].get
       end
+
+      def num_unread
+        DB.dbh[
+          %{
+            SELECT COUNT(*)
+            FROM river_posts rp
+            WHERE
+              rp.river_id = ?
+              AND NOT EXISTS (
+                SELECT 1
+                FROM posts_read pr
+                WHERE pr.post_id = rp.post_id
+              )
+          },
+          self.id
+        ].get
+      end
     end
   end
 end
