@@ -282,7 +282,7 @@ module Libertree
       end
 
       def home_river
-        River.where(account_id: self.id, home: true).first
+        River.where(account_id: self.id, home: true).first || NilRiver.new
       end
 
       def home_river=(river)

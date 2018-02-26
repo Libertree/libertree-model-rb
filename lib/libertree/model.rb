@@ -14,6 +14,9 @@ require_relative 'model/is-remote-or-local'
 require_relative 'model/has-searchable-text'
 require_relative 'model/has-display-text'
 
+require_relative 'model/nil-post'
+require_relative 'model/nil-river'
+
 require_relative 'model/account'
 require_relative 'model/account-settings'
 require_relative 'model/chat-message'

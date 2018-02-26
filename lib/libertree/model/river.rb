@@ -255,11 +255,36 @@ module Libertree
               AND NOT EXISTS (
                 SELECT 1
                 FROM posts_read pr
-                WHERE pr.post_id = rp.post_id
+                WHERE
+                  pr.post_id = rp.post_id
+                  AND pr.account_id = ?
               )
           },
-          self.id
+          self.id,
+          self.account_id
         ].get
+      end
+
+      def latest_unread
+        Post.from(:posts, :river_posts).where(
+          Sequel.lit(
+            %{
+              posts.id = river_posts.post_id
+              AND river_posts.river_id = ?
+              AND NOT EXISTS (
+                SELECT 1
+                FROM posts_read pr
+                WHERE
+                  pr.post_id = river_posts.post_id
+                  AND pr.account_id = ?
+              )
+            },
+            self.id,
+            self.account_id
+          )
+        ).order(
+          Sequel.lit('GREATEST(time_created, time_updated) DESC')
+        ).single_record || NilPost.new
       end
     end
   end
