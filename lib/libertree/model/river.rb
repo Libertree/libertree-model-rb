@@ -265,11 +265,11 @@ module Libertree
         ].get
       end
 
-      def latest_unread
+      def latest_unread(earlier_than_post: nil)
         river_id = self.id
         self_account_id = self.account_id
 
-        Post.from(:posts, :river_posts).where {
+        dataset = Post.from(:posts, :river_posts).where {
           {posts[:id] => river_posts[:post_id]}
         }.where {
           {river_posts[:river_id] => river_id}
@@ -281,7 +281,32 @@ module Libertree
               account_id: self_account_id
             ).exists
           )
-        ).order(
+        )
+
+        if earlier_than_post
+          dataset = dataset.where(
+            Sequel.lit(
+              %{
+                GREATEST(time_created, time_updated) < (
+                  SELECT GREATEST(p2.time_created, p2.time_updated)
+                  FROM posts p2
+                  WHERE p2.id = ?
+                ) OR (
+                  GREATEST(time_created, time_updated) = (
+                    SELECT GREATEST(p2.time_created, p2.time_updated)
+                    FROM posts p2
+                    WHERE p2.id = ?
+                  ) AND id < ?
+                )
+              },
+              earlier_than_post.id,
+              earlier_than_post.id,
+              earlier_than_post.id,
+            )
+          )
+        end
+
+        dataset.order(
           Sequel.lit('GREATEST(time_created, time_updated) DESC, id DESC')
         ).select_all(
           :posts

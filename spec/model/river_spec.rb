@@ -900,6 +900,36 @@ describe Libertree::Model::River do
             expect(subject).to eq post2
           end
         end
+
+        context '[given an earlier_than_post argument]' do
+          subject {
+            river.latest_unread(earlier_than_post: earlier_than_post)
+          }
+
+          context '(the latest post)' do
+            let(:earlier_than_post) { post3 }
+
+            it 'returns the second-latest post' do
+              expect(subject).to eq post2
+            end
+          end
+
+          context '(the second-latest post)' do
+            let(:earlier_than_post) { post2 }
+
+            it 'returns the third-latest post' do
+              expect(subject).to eq post1
+            end
+          end
+
+          context '(the earliest post)' do
+            let(:earlier_than_post) { post1 }
+
+            it 'returns a NilPost' do
+              expect(subject).to be_a(Libertree::Model::NilPost)
+            end
+          end
+        end
       end
     end
   end

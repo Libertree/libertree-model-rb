@@ -5,7 +5,7 @@ module Libertree
         0
       end
 
-      def latest_unread
+      def latest_unread(earlier_than_post: nil)
         NilPost.new
       end
     end
