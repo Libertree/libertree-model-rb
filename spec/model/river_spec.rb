@@ -843,4 +843,64 @@ describe Libertree::Model::River do
       end
     end
   end
+
+  describe '#latest_unread' do
+    subject { river.latest_unread }
+
+    context '[account has a home river]' do
+      let(:river) {
+        Libertree::Model::River.create(
+          FactoryGirl.attributes_for(
+            :river,
+            account_id: account.id,
+            home: true,
+            query: 'foo',
+          )
+        )
+      }
+
+      context '[river has several posts]' do
+        let(:author_account) {
+          Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
+        }
+        let(:post1) {
+          Libertree::Model::Post.create(
+            FactoryGirl.attributes_for(:post, member_id: author_account.member.id, text: 'test post')
+          )
+        }
+        let(:post2) {
+          Libertree::Model::Post.create(
+            FactoryGirl.attributes_for(:post, member_id: author_account.member.id, text: 'test post')
+          )
+        }
+        let(:post3) {
+          Libertree::Model::Post.create(
+            FactoryGirl.attributes_for(:post, member_id: author_account.member.id, text: 'test post')
+          )
+        }
+
+        before do
+          river.add_post post1
+          river.add_post post2
+          river.add_post post3
+        end
+
+        context '[no posts read by account]' do
+          it 'returns the latest post' do
+            expect(subject).to eq post3
+          end
+        end
+
+        context '[the latest post read by the account]' do
+          before do
+            post3.mark_as_read_by account
+          end
+
+          it 'returns the second-latest post' do
+            expect(subject).to eq post2
+          end
+        end
+      end
+    end
+  end
 end

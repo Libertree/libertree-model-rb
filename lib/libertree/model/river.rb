@@ -282,7 +282,9 @@ module Libertree
             ).exists
           )
         ).order(
-          Sequel.lit('GREATEST(time_created, time_updated) DESC')
+          Sequel.lit('GREATEST(time_created, time_updated) DESC, id DESC')
+        ).select_all(
+          :posts
         ).single_record || NilPost.new
       end
     end
