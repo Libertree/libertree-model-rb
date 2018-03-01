@@ -2,17 +2,17 @@
 require 'spec_helper'
 
 describe Libertree::Model::River do
-  before :all do
-    @account = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
-  end
+  let(:account) {
+    Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
+  }
 
   describe '#refresh_posts' do
     it 'limits the result set' do
-      id = @account.member.id
+      id = account.member.id
       (1..25).each do |n|
         Libertree::Model::Post.create(FactoryGirl.attributes_for( :post, member_id: id, text: n ))
       end
-      river = @account.home_river
+      river = account.home_river
       river.refresh_posts(10)
       expect( river.posts.count ).to eq(10)
 
@@ -22,9 +22,9 @@ describe Libertree::Model::River do
   end
 
   describe '#parsed_query' do
-    before :all do
+    before do
       @river = Libertree::Model::River.create(
-        FactoryGirl.attributes_for( :river, label: 'parsed-query-river', query: '', account_id: @account.id )
+        FactoryGirl.attributes_for( :river, label: 'parsed-query-river', query: '', account_id: account.id )
       )
       Libertree::Model::Server.own_domain = "localhost.net"
     end
@@ -120,14 +120,17 @@ describe Libertree::Model::River do
       expect( @river.parsed_query(true) ).to eq(expected)
     end
 
+    let(:account2) {
+      Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
+    }
+
     it 'looks up a member to verify :from query' do
-      account = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
-      @river.update(query: %{:from "#{account.member.handle}"})
+      @river.update(query: %{:from "#{account2.member.handle}"})
       expected = {
         'from' => {
           :negations    => [],
           :requirements => [],
-          :regular      => [account.member.id]
+          :regular      => [account2.member.id]
         }
       }
       expect( @river.parsed_query(true) ).to eq(expected)
@@ -142,7 +145,7 @@ describe Libertree::Model::River do
       pending 'this requires more rigorous logic processing'
       river = Libertree::Model::River.create( query: 'some whatever',
                                               label: 'river-spec-included-river',
-                                              account_id: @account.id )
+                                              account_id: account.id )
       @river.update(query: "some terms :river \"#{river.label}\"")
       expected = {
         'word' => {
@@ -259,14 +262,13 @@ describe Libertree::Model::River do
 
   describe '#matches_post?' do
     before do
-      @account = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
       other_account = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
       @member = other_account.member
     end
 
     def try_one( query, post_text, should_match, post_author = @member )
       river = Libertree::Model::River.create(
-        FactoryGirl.attributes_for( :river, label: query, query: query, account_id: @account.id )
+        FactoryGirl.attributes_for( :river, label: query, query: query, account_id: account.id )
       )
 
       post = Libertree::Model::Post.create(
@@ -328,7 +330,7 @@ describe Libertree::Model::River do
     end
 
     context 'given two different remote posters' do
-      before :all do
+      before do
         server = Libertree::Model::Server.create(
           FactoryGirl.attributes_for(:server, domain: 'remote' )
         )
@@ -348,7 +350,7 @@ describe Libertree::Model::River do
       end
 
       context 'with display names' do
-        before :all do
+        before do
           @member4.profile.update(name_display: 'First1 Last1')
           @member5.profile.update(name_display: 'First2 Last2')
         end
@@ -404,7 +406,7 @@ describe Libertree::Model::River do
 
     it "matches posts liked by the river's account" do
       river = Libertree::Model::River.create(
-        FactoryGirl.attributes_for( :river, label: ':liked', query: ':liked', account_id: @account.id )
+        FactoryGirl.attributes_for( :river, label: ':liked', query: ':liked', account_id: account.id )
       )
       post = Libertree::Model::Post.create(
         FactoryGirl.attributes_for( :post, member_id: @member.id, text: 'test post' )
@@ -415,7 +417,7 @@ describe Libertree::Model::River do
       Libertree::Model::PostLike.create(
         FactoryGirl.attributes_for(
           :post_like,
-          'member_id' => @account.member.id,
+          'member_id' => account.member.id,
           'post_id'   => post.id
         )
       )
@@ -427,7 +429,7 @@ describe Libertree::Model::River do
 
     it "matches posts commented on by the river's account" do
       river = Libertree::Model::River.create(
-        FactoryGirl.attributes_for( :river, label: ':commented', query: ':commented', account_id: @account.id )
+        FactoryGirl.attributes_for( :river, label: ':commented', query: ':commented', account_id: account.id )
       )
       post = Libertree::Model::Post.create(
         FactoryGirl.attributes_for( :post, member_id: @member.id, text: 'test post' )
@@ -436,7 +438,7 @@ describe Libertree::Model::River do
       river.matches_post?(post).should be_falsy
 
       Libertree::Model::Comment.create(
-        FactoryGirl.attributes_for( :comment, member_id: @account.member.id, post_id: post.id, text: 'test comment' )
+        FactoryGirl.attributes_for( :comment, member_id: account.member.id, post_id: post.id, text: 'test comment' )
       )
 
       river.matches_post?(post).should be_truthy
@@ -446,7 +448,7 @@ describe Libertree::Model::River do
 
     it "matches posts subscribed to by the river's account" do
       river = Libertree::Model::River.create(
-        FactoryGirl.attributes_for( :river, label: ':subscribed', query: ':subscribed', account_id: @account.id )
+        FactoryGirl.attributes_for( :river, label: ':subscribed', query: ':subscribed', account_id: account.id )
       )
       post = Libertree::Model::Post.create(
         FactoryGirl.attributes_for( :post, member_id: @member.id, text: 'test post' )
@@ -454,7 +456,7 @@ describe Libertree::Model::River do
 
       river.matches_post?(post).should be_falsy
 
-      @account.subscribe_to post
+      account.subscribe_to post
 
       river.matches_post?(post).should be_truthy
 
@@ -463,19 +465,19 @@ describe Libertree::Model::River do
 
     it 'allows composition of rivers via :river term' do
       Libertree::Model::River.create(
-        FactoryGirl.attributes_for( :river, label: 'foo', query: 'foo', account_id: @account.id )
+        FactoryGirl.attributes_for( :river, label: 'foo', query: 'foo', account_id: account.id )
       )
       try_one  ':river "foo"', 'foo bar', true
       try_one  ':river "foo"', 'bar', false
 
       Libertree::Model::River.create(
-        FactoryGirl.attributes_for( :river, label: 'Multi-word Label', query: 'foo2', account_id: @account.id )
+        FactoryGirl.attributes_for( :river, label: 'Multi-word Label', query: 'foo2', account_id: account.id )
       )
       try_one  ':river "Multi-word Label"', 'foo2 bar', true
       try_one  ':river "Multi-word Label"', 'bar', false
 
       Libertree::Model::River.create(
-        FactoryGirl.attributes_for( :river, label: 'bar', query: 'bar', account_id: @account.id )
+        FactoryGirl.attributes_for( :river, label: 'bar', query: 'bar', account_id: account.id )
       )
       try_one  'foo :river "bar"', 'foo bar', true
       try_one  'foo :river "bar"', 'foo baz', true
@@ -490,10 +492,10 @@ describe Libertree::Model::River do
       try_one  'foo baz +:river "bar"', 'baz bar', true
 
       Libertree::Model::River.create(
-        FactoryGirl.attributes_for( :river, label: 'level1', query: 'level1', account_id: @account.id )
+        FactoryGirl.attributes_for( :river, label: 'level1', query: 'level1', account_id: account.id )
       )
       Libertree::Model::River.create(
-        FactoryGirl.attributes_for( :river, label: 'composed', query: ':river "level1" level2', account_id: @account.id )
+        FactoryGirl.attributes_for( :river, label: 'composed', query: ':river "level1" level2', account_id: account.id )
       )
       try_one  'foo :river "composed"', 'foo', true
       try_one  'foo :river "composed"', 'level1', true
@@ -505,7 +507,7 @@ describe Libertree::Model::River do
     context 'given a river set to be appended to all other rivers' do
       before :each do
         @river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, label: 'global', query: 'foo', account_id: @account.id, appended_to_all: true )
+          FactoryGirl.attributes_for( :river, label: 'global', query: 'foo', account_id: account.id, appended_to_all: true )
         )
       end
 
@@ -527,7 +529,7 @@ describe Libertree::Model::River do
         Libertree::Model::PostLike.create(
           FactoryGirl.attributes_for(
             :post_like,
-            'member_id' => @account.member.id,
+            'member_id' => account.member.id,
             'post_id'   => @post_liked.id
           )
         )
@@ -536,7 +538,7 @@ describe Libertree::Model::River do
           FactoryGirl.attributes_for( :post, member_id: @member.id, text: 'test post' )
         )
         Libertree::Model::Comment.create(
-          FactoryGirl.attributes_for( :comment, member_id: @account.member.id, post_id: @post_commented.id, text: 'test comment' )
+          FactoryGirl.attributes_for( :comment, member_id: account.member.id, post_id: @post_commented.id, text: 'test comment' )
         )
 
         @post_liked_and_commented = Libertree::Model::Post.create(
@@ -545,39 +547,39 @@ describe Libertree::Model::River do
         Libertree::Model::PostLike.create(
           FactoryGirl.attributes_for(
             :post_like,
-            'member_id' => @account.member.id,
+            'member_id' => account.member.id,
             'post_id'   => @post_liked_and_commented.id
           )
         )
         Libertree::Model::Comment.create(
-          FactoryGirl.attributes_for( :comment, member_id: @account.member.id, post_id: @post_liked_and_commented.id, text: 'test comment' )
+          FactoryGirl.attributes_for( :comment, member_id: account.member.id, post_id: @post_liked_and_commented.id, text: 'test comment' )
         )
       end
 
       it 'matches correctly with combinations of :liked and :commented' do
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, label: 'r1', query: ':liked :commented', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, label: 'r1', query: ':liked :commented', account_id: account.id )
         )
         river.matches_post?(@post_commented).should be_truthy
         river.matches_post?(@post_liked).should be_truthy
         river.matches_post?(@post_liked_and_commented).should be_truthy
 
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, label: 'r2', query: '+:liked +:commented', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, label: 'r2', query: '+:liked +:commented', account_id: account.id )
         )
         river.matches_post?(@post_commented).should be_falsy
         river.matches_post?(@post_liked).should be_falsy
         river.matches_post?(@post_liked_and_commented).should be_truthy
 
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, label: 'r3', query: '+:liked :commented', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, label: 'r3', query: '+:liked :commented', account_id: account.id )
         )
         river.matches_post?(@post_commented).should be_falsy
         river.matches_post?(@post_liked).should be_falsy
         river.matches_post?(@post_liked_and_commented).should be_truthy
 
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, label: 'r3', query: '+:liked -:commented', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, label: 'r3', query: '+:liked -:commented', account_id: account.id )
         )
         river.matches_post?(@post_commented).should be_falsy
         river.matches_post?(@post_liked).should be_truthy
@@ -587,22 +589,18 @@ describe Libertree::Model::River do
 
     context 'given the river owner has some contact lists' do
       before :each do
-        account = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
-        @contact1 = account.member
-        account = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
-        @contact2 = account.member
-        account = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
-        @contact3 = account.member
-        account = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
-        @contact4 = account.member
+        @contact1 = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) ).member
+        @contact2 = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) ).member
+        @contact3 = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) ).member
+        @contact4 = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) ).member
 
         @list1 = Libertree::Model::ContactList.create(
-          FactoryGirl.attributes_for( :contact_list, account_id: @account.id, name: 'List 1' )
+          FactoryGirl.attributes_for( :contact_list, account_id: account.id, name: 'List 1' )
         )
         @list1.members = [ @contact1.id, @contact2.id, ]
         @list1.save
         @list2 = Libertree::Model::ContactList.create(
-          FactoryGirl.attributes_for( :contact_list, account_id: @account.id, name: 'List 2' )
+          FactoryGirl.attributes_for( :contact_list, account_id: account.id, name: 'List 2' )
         )
         @list2.members = [ @contact3.id, @contact4.id, ]
         @list2.save
@@ -632,8 +630,7 @@ describe Libertree::Model::River do
           FactoryGirl.attributes_for( :post, member_id: @contact4.id, text: 'test post' )
         )
 
-        account = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
-        @non_contact = account.member
+        @non_contact = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) ).member
         @post_other = Libertree::Model::Post.create(
           FactoryGirl.attributes_for( :post, member_id: @non_contact.id, text: 'test post' )
         )
@@ -641,7 +638,7 @@ describe Libertree::Model::River do
 
       it 'matches posts by people in those contact lists, and not posts by people not in those contact lists' do
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: ':contact-list "List 1"', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, query: ':contact-list "List 1"', account_id: account.id )
         )
         river.matches_post?(@post1a).should be_truthy
         river.matches_post?(@post1b).should be_truthy
@@ -654,7 +651,7 @@ describe Libertree::Model::River do
         river.matches_post?(@post_other).should be_falsy
 
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: ':contact-list "List 2"', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, query: ':contact-list "List 2"', account_id: account.id )
         )
         river.matches_post?(@post1a).should be_falsy
         river.matches_post?(@post1b).should be_falsy
@@ -667,7 +664,7 @@ describe Libertree::Model::River do
         river.matches_post?(@post_other).should be_falsy
 
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: 'test +:contact-list "List 1"', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, query: 'test +:contact-list "List 1"', account_id: account.id )
         )
         river.matches_post?(@post1a).should be_truthy
         river.matches_post?(@post1b).should be_truthy
@@ -680,7 +677,7 @@ describe Libertree::Model::River do
         river.matches_post?(@post_other).should be_falsy
 
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: 'test -:contact-list "List 1"', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, query: 'test -:contact-list "List 1"', account_id: account.id )
         )
         river.matches_post?(@post1a).should be_falsy
         river.matches_post?(@post1b).should be_falsy
@@ -706,19 +703,19 @@ describe Libertree::Model::River do
 
       it 'matches posts based on their visibility' do
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: 'test +:visibility internet', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, query: 'test +:visibility internet', account_id: account.id )
         )
         river.matches_post?(@post_internet).should be_truthy
         river.matches_post?(@post_forest).should be_falsy
 
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: 'test +:visibility forest', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, query: 'test +:visibility forest', account_id: account.id )
         )
         river.matches_post?(@post_internet).should be_falsy
         river.matches_post?(@post_forest).should be_truthy
 
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: 'test -:visibility internet', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, query: 'test -:visibility internet', account_id: account.id )
         )
         river.matches_post?(@post_internet).should be_falsy
         river.matches_post?(@post_forest).should be_truthy
@@ -781,7 +778,7 @@ describe Libertree::Model::River do
 
       it 'matches posts in sprung pools' do
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: %|:spring "Post Feed" "#{@member.handle}"|, account_id: @account.id )
+          FactoryGirl.attributes_for( :river, query: %|:spring "Post Feed" "#{@member.handle}"|, account_id: account.id )
         )
         river.matches_post?(@post_private).should be_falsy
         river.matches_post?(@post_feed).should be_truthy
@@ -803,42 +800,42 @@ describe Libertree::Model::River do
 
       it 'matches posts based on their source' do
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: 'test +:via "foo"', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, query: 'test +:via "foo"', account_id: account.id )
         )
         river.matches_post?(@post_from_script).should be_falsy
         river.matches_post?(@post_from_friendica).should be_falsy
         river.matches_post?(@post_local).should be_falsy
 
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: 'test +:via "some-script.pl"', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, query: 'test +:via "some-script.pl"', account_id: account.id )
         )
         river.matches_post?(@post_from_script).should be_truthy
         river.matches_post?(@post_from_friendica).should be_falsy
         river.matches_post?(@post_local).should be_falsy
 
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: 'test +:via "Some Friendica Installation"', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, query: 'test +:via "Some Friendica Installation"', account_id: account.id )
         )
         river.matches_post?(@post_from_script).should be_falsy
         river.matches_post?(@post_from_friendica).should be_truthy
         river.matches_post?(@post_local).should be_falsy
 
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: 'test -:via "foo"', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, query: 'test -:via "foo"', account_id: account.id )
         )
         river.matches_post?(@post_from_script).should be_truthy
         river.matches_post?(@post_from_friendica).should be_truthy
         river.matches_post?(@post_local).should be_truthy
 
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: 'test -:via "some-script.pl"', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, query: 'test -:via "some-script.pl"', account_id: account.id )
         )
         river.matches_post?(@post_from_script).should be_falsy
         river.matches_post?(@post_from_friendica).should be_truthy
         river.matches_post?(@post_local).should be_truthy
 
         river = Libertree::Model::River.create(
-          FactoryGirl.attributes_for( :river, query: 'test -:via "Some Friendica Installation"', account_id: @account.id )
+          FactoryGirl.attributes_for( :river, query: 'test -:via "Some Friendica Installation"', account_id: account.id )
         )
         river.matches_post?(@post_from_script).should be_truthy
         river.matches_post?(@post_from_friendica).should be_falsy
