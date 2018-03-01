@@ -266,21 +266,20 @@ module Libertree
       end
 
       def latest_unread
-        Post.from(:posts, :river_posts).where(
-          Sequel.lit(
-            %{
-              posts.id = river_posts.post_id
-              AND river_posts.river_id = ?
-              AND NOT EXISTS (
-                SELECT 1
-                FROM posts_read pr
-                WHERE
-                  pr.post_id = river_posts.post_id
-                  AND pr.account_id = ?
-              )
-            },
-            self.id,
-            self.account_id
+        river_id = self.id
+        self_account_id = self.account_id
+
+        Post.from(:posts, :river_posts).where {
+          {posts[:id] => river_posts[:post_id]}
+        }.where {
+          {river_posts[:river_id] => river_id}
+        }.where(
+          Sequel.~(
+            PostRead.where {
+              { posts_read[:post_id] => river_posts[:post_id] }
+            }.where(
+              account_id: self_account_id
+            ).exists
           )
         ).order(
           Sequel.lit('GREATEST(time_created, time_updated) DESC')
