@@ -26,11 +26,13 @@ module Libertree
       def member
         @member = Member[self.member_id]
       end
+      alias :actor :member
 
       # TODO: DB: association
       def post
         @post = Post[self.post_id]
       end
+      alias :context :post
 
       def before_destroy
         if self.post

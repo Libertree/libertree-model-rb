@@ -71,6 +71,7 @@ module Libertree
       def member
         @member ||= Member[self.member_id]
       end
+      alias :actor :member
 
       def time_updated_overall
         [time_commented, time_updated].compact.max

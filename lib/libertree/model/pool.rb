@@ -71,6 +71,7 @@ module Libertree
       def member
         @member ||= Member[self.member_id]
       end
+      alias :actor :member
 
       # TODO: DRY up with member.posts?
       def posts( opts = {} )

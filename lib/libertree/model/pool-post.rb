@@ -12,6 +12,7 @@ module Libertree
       def member
         pool.member
       end
+      alias :actor :member
     end
   end
 end

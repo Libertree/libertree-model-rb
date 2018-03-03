@@ -21,10 +21,12 @@ module Libertree
       def member
         @member ||= Member[self.member_id]
       end
+      alias :actor :member
 
       def comment
         @comment ||= Comment[self.comment_id]
       end
+      alias :context :comment
 
       def before_destroy
         if self.local? && self.comment.post.distribute?

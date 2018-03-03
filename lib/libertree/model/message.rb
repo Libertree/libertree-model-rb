@@ -9,6 +9,7 @@ module Libertree
         @sender ||= Member[self.sender_member_id]
       end
       alias :member :sender
+      alias :actor :sender
 
       def distribute
         trees = self.recipients.reduce(Set.new) { |_trees, recipient|

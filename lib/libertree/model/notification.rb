@@ -13,6 +13,10 @@ module Libertree
         end
       end
 
+      def type
+        self.data['type']
+      end
+
       def subject
         @subject ||= case self.data['type']
         when 'comment'
@@ -28,6 +32,29 @@ module Libertree
         when 'mention', 'group-post'
           Libertree::Model::Post[ self.data['post_id'] ]
         end
+      end
+
+      def context
+        case self.subject
+        when Libertree::Model::Comment, Libertree::Model::PostLike
+          self.subject.post
+        when Libertree::Model::CommentLike
+          self.subject.comment
+        when Libertree::Model::Post  # a mention or group post
+          post = self.subject
+          case self.data['type']
+          when 'mention'
+            post
+          when 'group-post'
+            post.group
+          end
+        else
+          self.subject
+        end
+      end
+
+      def actor
+        subject.actor
       end
 
       def self.mark_seen_for_account_and_comment_id(account, comment_ids)

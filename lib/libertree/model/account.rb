@@ -133,31 +133,16 @@ module Libertree
         @notifications_unseen ||= Notification.where(account_id: self.id, seen: false).order(:id)
       end
 
-      # TODO: Is this no longer used?
-      def notifications_unseen_grouped(max_groups=5, limit=200)
+      def notifications_unseen_grouped(max_groups: 5, limit: 200)
         grouped = {}
         keys = [] # so we have a display order
 
         notifs = self.notifications_unseen.reverse_order(:id).limit(limit)
         notifs.each do |n|
-          next  if n.subject.nil?
+          next  if n.subject.nil?  # Sometimes subjects are deleted
 
-          target = case n.subject
-                   when Libertree::Model::Comment, Libertree::Model::PostLike
-                     n.subject.post
-                   when Libertree::Model::CommentLike
-                     n.subject.comment
-                   when Libertree::Model::Post
-                      # mention or group post
-                      post = n.subject
-                      post.group || post
-                   else
-                     n.subject
-                   end
+          key = [n.context, n.subject.class]
 
-          # collect by target and type; we don't want to put comment
-          # and post like notifs in the same bin
-          key = [target, n.subject.class]
           if grouped[key]
             grouped[key] << n
           else

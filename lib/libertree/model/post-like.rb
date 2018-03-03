@@ -21,10 +21,12 @@ module Libertree
       def member
         @member ||= Member[self.member_id]
       end
+      alias :actor :member
 
       def post
         @post ||= Post[self.post_id]
       end
+      alias :context :post
 
       def before_destroy
         if self.local? && self.post.distribute?
