@@ -48,6 +48,8 @@ module Libertree
           when 'group-post'
             post.group
           end
+        when Libertree::Model::PoolPost
+          self.subject.post
         else
           self.subject
         end
