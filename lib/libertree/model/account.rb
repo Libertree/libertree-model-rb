@@ -156,7 +156,7 @@ module Libertree
       end
 
       def num_notifications_unseen
-        @num_notifications_unseen ||= Notification.where(account_id: self.id, seen: false).count
+        @num_notifications_unseen ||= notifications_unseen.count
       end
 
       def num_chat_unseen
