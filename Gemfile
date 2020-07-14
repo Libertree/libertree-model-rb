@@ -1,16 +1,16 @@
 source 'http://rubygems.org'
 
-gem 'net-ldap', '~> 0.16.1'
-gem 'ruby-oembed', '~> 0.12.0'
-gem 'sequel', '< 5'
+gem 'net-ldap', '~> 0.16.2'
+gem 'ruby-oembed', '~> 0.13.1'
+gem 'sequel', '~> 5.34.0'
 
 group 'extensions' do
   gem 'bcrypt-ruby', '~> 3.1.5'
-  gem 'gpgme', '~> 2.0.19'
-  gem 'json', '~> 2.2.0'
-  gem 'nokogiri', '~> 1.10.4'
-  gem 'parkdown-libertree'
-  gem 'pg', '~> 0.21.0'
+  gem 'gpgme', '~> 2.0.20'
+  gem 'json', '~> 2.3.1'
+  gem 'nokogiri', '~> 1.10.10'
+  gem 'parkdown-libertree', '~> 1.4.26'
+  gem 'pg', '~> 1.2.3'
 end
 
 group 'development' do
