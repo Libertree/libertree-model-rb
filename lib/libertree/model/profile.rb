@@ -18,7 +18,11 @@ module Libertree
       end
 
       def self.search(query)
-        self.where("(to_tsvector('simple', description) || to_tsvector('english', description)) @@ plainto_tsquery(?)", query).or("name_display ILIKE '%' || ? || '%'", query)
+        self.where(
+          Sequel.lit("(to_tsvector('simple', description) || to_tsvector('english', description)) @@ plainto_tsquery(?)", query)
+        ).or(
+          Sequel.lit("name_display ILIKE '%' || ? || '%'", query)
+        )
       end
     end
   end

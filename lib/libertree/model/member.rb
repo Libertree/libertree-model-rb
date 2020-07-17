@@ -80,18 +80,23 @@ module Libertree
         if local
           self.qualify.
             join(:accounts, :id=>:account_id).
-            where(:accounts__username => username).
+            where(Sequel.qualify(:accounts, :username) => username).
             limit(1).
             first
         else
           # TODO: servers.name_given is no longer used.  Remove it after
           # migrating user rivers/contact lists etc.
-          self.qualify.
-            join(:servers, :id=>:server_id).
-            where(:members__username => username).
-            where(Sequel.or(:servers__domain => host, :servers__name_given => host)).
-            limit(1).
-            first
+          self.qualify
+            .join(:servers, :id=>:server_id)
+            .where(Sequel.qualify(:members, :username) => username)
+            .where(
+              Sequel.or(
+                Sequel.qualify(:servers, :domain) => host,
+                Sequel.qualify(:servers, :name_given) => host
+              )
+            )
+            .limit(1)
+            .first
         end
       end
 
@@ -100,7 +105,7 @@ module Libertree
       def self.with_display_name(name)
         self.qualify.
           join(:profiles, :member_id=>:id).
-          where(:profiles__name_display => name).
+          where(Sequel.qualify(:profiles, :name_display) => name).
           limit(1).
           first
       end

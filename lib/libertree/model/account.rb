@@ -42,8 +42,13 @@ module Libertree
 
       def self.authenticate_db(creds)
         if creds['password_reset_code'].to_s
-          account = Account.where(%{password_reset_code = ? AND NOW() <= password_reset_expiry},
-                                  creds['password_reset_code'].to_s).first
+          account = Account.where(
+            Sequel.lit(
+              %{password_reset_code = ? AND NOW() <= password_reset_expiry},
+              creds['password_reset_code'].to_s
+            )
+          ).first
+
           if account
             return account
           end
@@ -286,7 +291,9 @@ module Libertree
       end
 
       def invitations_not_accepted
-        Invitation.where("inviter_account_id = ? AND account_id IS NULL", self.id).order(:id).all
+        Invitation.where(
+          Sequel.lit("inviter_account_id = ? AND account_id IS NULL", self.id)
+        ).order(:id).all
       end
 
       def new_invitation
@@ -362,7 +369,10 @@ module Libertree
       # @return [Boolean] true iff password reset was successfully set up
       def self.set_up_password_reset_for(email)
         # TODO: Don't allow registration of accounts with the same email but different case
-        account = self.where('LOWER(email) = ?', email.downcase).first
+        account = self.where(
+          Sequel.lit('LOWER(email) = ?', email.downcase)
+        ).first
+
         if account
           account.password_reset_code = SecureRandom.hex(16)
           account.password_reset_expiry = Time.now + 60 * 60

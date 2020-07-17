@@ -14,11 +14,10 @@ describe Libertree::Model::Post do
   end
 
   context 'with the Beatles and a post mentioning all but Paul' do
-    before :all do
+    before do
       @john, @paul, @george, @ringo = [ 'john', 'paul', 'george', 'ringo'].map do |name|
         Libertree::Model::Account.create( username: name, password_encrypted: 'p' )
       end
-      Libertree::Model::Server.own_domain = "localhost.net"
     end
 
     describe '#mentioned_accounts' do
@@ -205,7 +204,7 @@ describe Libertree::Model::Post do
   end
 
   describe 'mark_as_unread_by_all' do
-    before :all do
+    before do
       @john, @paul, @george, @ringo = [ 'john', 'paul', 'george', 'ringo'].map do |name|
         Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
       end
@@ -221,17 +220,17 @@ describe Libertree::Model::Post do
 
       @post.mark_as_unread_by_all except: [@ringo]
 
-      expect( @post.read_by?(@john)   ).to be_false
-      expect( @post.read_by?(@paul)   ).to be_false
-      expect( @post.read_by?(@george) ).to be_false
-      expect( @post.read_by?(@ringo)  ).to be_true
+      expect( @post.read_by?(@john)   ).to be_falsy
+      expect( @post.read_by?(@paul)   ).to be_falsy
+      expect( @post.read_by?(@george) ).to be_falsy
+      expect( @post.read_by?(@ringo)  ).to be_truthy
     end
   end
 
   describe '#get_full' do
     before do
       members = (1..5).map do
-        Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
+        Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) ).member
       end
 
       @member = members.first

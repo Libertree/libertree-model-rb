@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Libertree::Model::NodeSubscription do
   describe '.for' do
-    before :all do
+    before do
       @node_1 = Libertree::Model::Node.create( FactoryGirl.attributes_for(:node) )
       @node_2 = Libertree::Model::Node.create( FactoryGirl.attributes_for(:node) )
       @node_3 = Libertree::Model::Node.create( FactoryGirl.attributes_for(:node) )

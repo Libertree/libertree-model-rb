@@ -1,9 +1,10 @@
 require 'spec_helper'
 
 describe Libertree::Model::Message do
-  before :all do
+  before do
     @account = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
     @member = @account.member
+    expect(Libertree::Model::Member[@member.id]).not_to be_nil
 
     local_account = Libertree::Model::Account.create( FactoryGirl.attributes_for(:account) )
     @local_member = local_account.member
@@ -24,11 +25,11 @@ describe Libertree::Model::Message do
 
     it 'creates a new local message record' do
       c = Libertree::Model::Message.count
-      message = Libertree::Model::Message.
-        create_with_recipients({ :sender_member_id => @member.id,
-                                 :recipient_member_ids => [@local_member.id],
-                                 :text => 'Hello'
-                               })
+      message = Libertree::Model::Message.create_with_recipients({
+        :sender_member_id => @member.id,
+        :recipient_member_ids => [@local_member.id],
+        :text => 'Hello',
+      })
       expect( Libertree::Model::Message.count ).to be(c + 1)
     end
 
@@ -65,11 +66,11 @@ describe Libertree::Model::Message do
 
   before :each do
     Libertree::DB.dbh[ "TRUNCATE messages, message_recipients" ].get
-    @message_sent = Libertree::Model::Message.
-      create_with_recipients({ :sender_member_id => @member.id,
-                               :recipient_member_ids => [@local_member.id, @remote_member.id],
-                               :text => 'Hello'
-                             })
+    @message_sent = Libertree::Model::Message.create_with_recipients({
+      :sender_member_id => @member.id,
+      :recipient_member_ids => [@local_member.id, @remote_member.id],
+      :text => 'Hello',
+    })
     @message_received = Libertree::Model::Message.
       create_with_recipients({ :sender_member_id => @local_member.id,
                                :recipient_member_ids => [@member.id, @remote_member.id],
@@ -119,9 +120,12 @@ describe Libertree::Model::Message do
 
     it 'marks the message as deleted for a given recipient (even if it is the same as the sender)' do
       @message_self2.delete_for_participant(@member)
-      deleted = Libertree::DB.dbh[ "SELECT deleted FROM message_recipients WHERE message_id = ? AND member_id = ?",
-                                 @message_self2.id, @member.id ].single_value
-      expect( deleted ).to be_true
+      deleted = Libertree::DB.dbh[
+        "SELECT deleted FROM message_recipients WHERE message_id = ? AND member_id = ?",
+        @message_self2.id,
+        @member.id
+      ].single_value
+      expect(deleted).to be_truthy
     end
   end
 end

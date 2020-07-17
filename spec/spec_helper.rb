@@ -29,8 +29,11 @@ end
 
 RSpec.configure do |config|
   config.before(:suite) do
+    DatabaseCleaner.strategy = :truncation
     DatabaseCleaner.start
     DatabaseCleaner.clean
+
+    Libertree::Model::Server.own_domain = "localhost.net"
   end
 
   config.around(:each) do |example|

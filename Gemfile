@@ -23,5 +23,5 @@ end
 group 'test' do
   gem 'database_cleaner'
   gem 'factory_girl'
-  gem 'rspec'
+  gem 'rspec', '~> 3.9.0'
 end
