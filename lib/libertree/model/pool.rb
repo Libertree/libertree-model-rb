@@ -86,7 +86,7 @@ module Libertree
           join(:pools_posts, :post_id=>:id).
           where(&time_clause).
           where(:pool_id => self.id).
-          reverse_order(:posts__id).
+          reverse_order(Sequel.qualify(:posts, :id)).
           limit(limit)
 
         # optionally restrict to Internet visible posts
