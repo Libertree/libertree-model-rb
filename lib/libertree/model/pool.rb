@@ -76,21 +76,29 @@ module Libertree
       def posts( opts = {} )
         limit = opts.fetch(:limit, 30)
         time = Time.at( opts.fetch(:time, Time.now.to_f) ).strftime("%Y-%m-%d %H:%M:%S.%6N%z")
-        time_clause = if opts[:newer]
-                        proc { time_created > time }
-                      else
-                        proc { time_created < time }
-                      end
+        if opts[:newer]
+          time_clause = proc { time_created > time }
+        else
+          time_clause = proc { time_created < time }
+        end
 
-        res = Post.qualify.
-          join(:pools_posts, :post_id=>:id).
-          where(&time_clause).
-          where(:pool_id => self.id).
-          reverse_order(Sequel.qualify(:posts, :id)).
-          limit(limit)
+        order_by_updated = opts.fetch(:order_by_updated, false)
+        if order_by_updated
+          order = Sequel.lit("GREATEST(posts.time_commented, posts.time_updated)")
+        else
+          order = Sequel.qualify(:posts, :id)
+        end
+
+        res = Post.qualify
+        .join(:pools_posts, post_id: :id)
+        .where(&time_clause)
+        .where(pool_id: self.id)
+        .reverse_order(order)
+        .limit(limit)
 
         # optionally restrict to Internet visible posts
         res = res.where(visibility: 'internet')  if opts[:public]
+
         res
       end
 
