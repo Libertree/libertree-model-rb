@@ -8,7 +8,7 @@ group 'extensions' do
   gem 'bcrypt-ruby', '~> 3.1.5'
   gem 'gpgme', '~> 2.0.20'
   gem 'json', '~> 2.3.1'
-  gem 'nokogiri', '~> 1.10.10'
+  gem 'nokogiri', '~> 1.11.4'
   gem 'parkdown-libertree', '~> 1.4.26'
   gem 'pg', '~> 1.2.3'
 end
