@@ -1,13 +1,14 @@
 Gem::Specification.new do |s|
-  s.name        = 'libertree-model'
-  s.version     = '0.9.16'
-  s.date        = '2020-07-21'
-  s.summary     = "Database library for Libertree"
-  s.description = "Database library for Libertree"
-  s.authors     = ["Pistos", "rekado"]
-  # s.email       = ''
-  s.files       = Dir["lib/**/*"]
-  s.homepage    = 'http://libertree.org/'
+  s.authors = ['Pistos', 'rekado']
+  s.date = '2025-03-12'
+  s.description = 'Database library for Libertree'
+  s.files = Dir['lib/**/*']
+  s.homepage = 'http://libertree.org/'
+  s.licenses = ['AGPL-3.0-or-later']
+  s.name = 'libertree-model'
+  s.required_ruby_version = '>= 3.0.0'
+  s.summary = 'Database library for Libertree'
+  s.version = '0.9.17'
 
   s.add_dependency 'ruby-oembed', '~> 0.13.1'
   s.add_dependency 'gpgme', '~> 2.0.20'
